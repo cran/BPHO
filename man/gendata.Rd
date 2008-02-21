@@ -57,7 +57,7 @@ gen_X(n,p,K)
 
 }
 
-\seealso{\link{begin.BPHO}}
+\seealso{\code{\link{comp_train_pred}}}
 
 \examples{
 data_hmm <- gen_hmm(100,10,8,2,0.8,0.8)

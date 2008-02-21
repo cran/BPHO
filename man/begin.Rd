@@ -1,51 +1,52 @@
-\name{comp_train_pred}
+\name{begin.BPHO}
 
 \alias{comp_train_pred}
 
-\alias{begin.BPHO}
 
 \alias{cv_comp_train_pred}
 
 \title{User-level functions for compressing parameters, training the models with MCMC, and making predictions for test cases}
 
-\description{The function \code{comp_train_pred} compresses parameters based on training cases if \code{new_compression=1}, and the information about parameter compression is written to the binary file \code{ptn_file}. When \code{new_compression=0}, it uses the existing \code{ptn_file}, if this file is missing an error is reported. It then trains the models with Markov chain Monte Carlo if \code{iters_mc > 0}, and the Markov chain iterations are written to the binary file \code{mc_file}. The methods of writing to and reading from the files \code{ptn_file} and \code{mc_file} can be found from the documentations \link{compression} and \link{training}. Finally it predicts the responses of test cases if \code{iters_pred > 0}, and the result is written to the file \code{pred_file} and also returned as a value of this function.
+\description{The function \code{comp_train_pred} compresses parameters based on training cases if one specify \bold{\code{new_compression=1}}, and the information about parameter compression is written to the binary file \code{ptn_file}. When \bold{\code{new_compression=0}}, it uses the existing \code{ptn_file}, if this file is missing an error is reported. It then trains the models with Markov chain Monte Carlo if \bold{\code{iters_mc > 0}}, and the Markov chain iterations are written to the binary file \code{mc_file}. The methods of writing to and reading from the files \code{ptn_file} and \code{mc_file} can be found from the documentations \code{\link{compression}} and \code{\link{training}}. Finally it predicts the responses of test cases if \bold{\code{iters_pred > 0}}, and the result is written to the file \code{pred_file} and also returned as a value of this function.
 
 The function \code{cv_comp_train_pred} is a short-cut function for performing cross-validation with the function \code{comp_train_pred}.
 
-The argument \code{is.sequence=1} indicates that sequence prediction models are fitted to the data, and \code{is.sequence=1} indicates that general classification models based on discrete predictor variables are fitted.
+The argument \code{is.sequence=1} indicates that a sequence prediction model is fitted to the data, and \code{is.sequence=1} indicates that a general classification model based on discrete predictor variables is fitted.
 }
 
 \usage{
 comp_train_pred(
-	################## specify data information  #######################
-	test_x,train_x,train_y,no_cls=c(),nos_fth=c(),
-	################## specify for compression #########################
-	is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
-	###################### specify for priors  #########################
-	alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-	################# specify for mc sampling ##########################
-	mc_file=".mc.log",start_over=FALSE,iters_mc=200,iters_bt=10,
-	iters_sgm=50,w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-	################### specify for prediction #########################
-	pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
+################## specify data information  #####################
+test_x,train_x,train_y,no_cls=c(),nos_fth=c(),
+################## specify for compression #######################
+is_sequence=1,order,ptn_file=".ptn.log",
+new_compression=1,do_comp=1,
+###################### specify for priors  #######################
+alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
+################# specify for mc sampling ########################
+mc_file=".mc.log",start_over=FALSE,iters_mc=200,iters_bt=10,
+iters_sgm=50,w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
+################### specify for prediction #######################
+pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
 
 cv_comp_train_pred(
-	###################### Specify data,order,no_fold ##################
-	no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
-	#################### specify for compressing########################
-	is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
-	###################### specify for priors  #########################
-	alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-	################# specify for mc sampling ##########################
-	mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
-	w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-	################### specify for prediction #########################
-	pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
+###################### Specify data,order,no_fold ################
+no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
+#################### specify for compressing######################
+is_sequence=1,order,ptn_file=".ptn.log",
+new_compression=1,do_comp=1,
+###################### specify for priors  #######################
+alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
+################# specify for mc sampling ########################
+mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
+w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
+################### specify for prediction #######################
+pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 }
 
 \arguments{
 
-\item{test_x}{Discrete features (also called features,covariates,independent variables, explanatory variables, predictor variables) of test data on which the  predictions are based.  The row is subject and the columns are inputs, which are coded with 1,2,..., with 0 reserved to represent that this input is not considered in a pattern. When the sequence prediction models are fitted, it is assumed that the first column is the state closest to the response. For example, a sequence `x1,x2,x3,x4' is saved in \code{test_x} as `x4,x3,x2,x1', for predicting the response `x5'.}
+\item{test_x}{Discrete features (also called inputs,covariates,independent variables, explanatory variables, predictor variables) of test data on which the  predictions are based.  The row is subject and the columns are inputs, which are coded with 1,2,..., with 0 reserved to represent that this input is not considered in a pattern. When the sequence prediction models are fitted, it is assumed that the first column is the state closest to the response. For example, a sequence `x1,x2,x3,x4' is saved in \code{test_x} as `x4,x3,x2,x1', for predicting the response `x5'.}
 
 \item{train_x}{Discrete features of training data of the same format as \code{test_x}.}
 
@@ -62,7 +63,7 @@ cv_comp_train_pred(
 
 \item{order}{the order of interactions considered, default to the total number of features, i.e. \code{ncol(train_x)}.}
 
-\item{ptn_file}{a character string, the name of the binary file to which the compression result is written. The method of writing to and reading from \code{ptn_file} can be found from the documentation for \link{compression}.}
+\item{ptn_file}{a character string, the name of the binary file to which the compression result is written. The method of writing to and reading from \code{ptn_file} can be found from the documentation for \code{\link{compression}}.}
 
 \item{new_compression}{\code{new_compression=1} indicates removing the old file \code{ptn_file} if it exists and doing the compression once again. \code{new_compression=0} indicates using the old file \code{ptn_file} without doing compression once again. Note that when \code{new_compression=0}, the specification related to training cases does not take effect.}
 
@@ -72,7 +73,7 @@ cv_comp_train_pred(
 
 \item{sigma_precisions, log_sigma_modes}{two vectors of length \code{order+1}, whose meanings are interpreted as follows: the Gaussian distribution with location \code{log_sigma_modes[o]} and standard deviation \code{1/sigmas_precisions[o]} is the prior distribution for logarithm of `sigmas[o]', which is the hyperparameter (scale parameter of Gaussian distribution or Cauchy distribution) for the regression coefficients (i.e. `beta's) associated with the interactions of order `o' }
 
-\item{mc_file}{A character string, the name of the binary file to which Markov chain is written. The method of writing to and reading from \code{mc_file} can be found from the documentation for \link{training}.}
+\item{mc_file}{A character string, the name of the binary file to which Markov chain is written. The method of writing to and reading from \code{mc_file} can be found from the documentation for \code{\link{training}}.}
 
 \item{start_over}{\code{start_over=TRUE} indicates that the existing file \code{mc_file} is deleted before a Markov chain sampling starts, otherwise the Markov chain will continue from the last iteration stored in \code{mc_file}. }
 
@@ -99,9 +100,10 @@ training the model, predicting for test cases}
 
 }
 
-\seealso{\link{gendata},\link{compression},\link{training},\link{prediction}}
+\seealso{\code{\link{gendata}},\code{\link{compression}},\code{\link{training}},\code{\link{prediction}}}
 
-\author{Longhai Li (Homepage: \url{http://math.usask.ca/~longhai}, Email: longhai(at)math.usask.ca or longhai(at)utstat.toronto.edu)}
+\author{Longhai Li (Homepage: \url{http://math.usask.ca/~longhai},
+Email: longhai(at)math.usask.ca or longhai(at)utstat.toronto.edu)}
 
 \references{\url{http://math.usask.ca/~longhai/doc/seqpred/seqpred.abstract.html}}
 
@@ -143,14 +145,17 @@ display_ptn(ptn_file=".ptn_file.log",gid=c(1,2))
 ## display the general information of Markov chain sampling
 display_mc(mc_file=".mc_file.log")
 
-## read Markov chain values for log-likelihood from the file ".mc_file.log"
-read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",iter_b=0,forward=1,n=100)
+## read Markov chain values of log-likelihood from  ".mc_file.log"
+read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",
+        iter_b=0,forward=1,n=100)
 
 ## particularly read `betas' by specifying the group and class id
-read_betas(mc_file=".mc_file.log",ix_g=5,ix_cls=2,iter_b=0,forward=1,n=100)
+read_betas(mc_file=".mc_file.log",ix_g=5,ix_cls=2,
+           iter_b=0,forward=1,n=100)
 
 ## display the information on the pattern related to a `beta'
-display_a_beta(mc_file=".mc_file.log",ptn_file=".ptn_file.log",id_beta=5)
+display_a_beta(mc_file=".mc_file.log",
+               ptn_file=".ptn_file.log",id_beta=5)
 
 ## calculate the medians of samples of each 'beta'
 calc_medians_betas(mc_file=".mc_file.log",iter_b=10,forward=1,n=90)
@@ -160,7 +165,7 @@ evaluate_prediction(
        test_y=data_hmm$y[1:100],
        pred_result=read.csv(".pred_file.csv"),
        file_eval_details="eval_details")
-       
+
 #perform cross-validation with training data only
 cv_comp_train_pred(
 	################## specify data information  ################
@@ -180,27 +185,27 @@ cv_comp_train_pred(
 	iters_pred = 90)
 
 
-########################################################################
-########################################################################
+#####################################################################
+#####################################################################
 
 ## generating a classification data
 data_class <- gen_bin_ho(200,3,3,1,c(0.3,0.2,0.1),c(2,2,2),0)
 
 ## compressing parameters, training model, making prediction
 comp_train_pred(
-	################## specify data information  ###################
+	################## specify data information  ################
 	test_x=data_class$X[1:100,],train_x=data_class$X[-(1:100),],
 	train_y=data_class$y[-(1:100)],no_cls=3,nos_fth=rep(3,3),
-	################## specify for compression #####################
+	################## specify for compression ##################
 	is_sequence=0,order=3,ptn_file=".ptn_file.log",
 	new_compression=1,do_comp=1,
-	###################### specify for priors  #####################
+	###################### specify for priors  ##################
 	alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-	################# specify for mc sampling ######################
+	################# specify for mc sampling ###################
 	mc_file=".mc_file.log",start_over=TRUE,iters_mc=100,
 	iters_bt=1,iters_sgm=2,w_bt=5,w_sgm=0.5,
 	m_bt=50,ini_log_sigmas=c(),
-	################## specify for prediction ######################
+	################## specify for prediction ###################
 	pred_file=".pred_file.csv",iter_b = 10,forward = 1,
 	iters_pred = 90)
 
@@ -213,14 +218,17 @@ display_ptn(ptn_file=".ptn_file.log",gid=c(1,2))
 ## display the general information of Markov chain sampling
 display_mc(mc_file=".mc_file.log")
 
-## read Markov chain values for log-likelihood from the file ".mc_file.log"
-read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",iter_b=0,forward=1,n=100)
+## read Markov chain values of log-likelihood from ".mc_file.log"
+read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",
+        iter_b=0,forward=1,n=100)
 
 ## particularly read `betas' by specifying the group and class id
-read_betas(mc_file=".mc_file.log",ix_g=5,ix_cls=2,iter_b=0,forward=1,n=100)
+read_betas(mc_file=".mc_file.log",ix_g=5,ix_cls=2,
+           iter_b=0,forward=1,n=100)
 
 ## display the information on the pattern related to a `beta'
-display_a_beta(mc_file=".mc_file.log",ptn_file=".ptn_file.log",id_beta=5)
+display_a_beta(mc_file=".mc_file.log",ptn_file=".ptn_file.log",
+               id_beta=5)
 
 ## calculate the medians of samples of each 'beta'
 calc_medians_betas(mc_file=".mc_file.log",iter_b=10,forward=1,n=90)
