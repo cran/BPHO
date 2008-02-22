@@ -1,46 +1,47 @@
-\name{begin.BPHO}
+\name{comp_train_pred}
+
+\alias{begin.BPHO}
 
 \alias{comp_train_pred}
-
 
 \alias{cv_comp_train_pred}
 
 \title{User-level functions for compressing parameters, training the models with MCMC, and making predictions for test cases}
 
-\description{The function \code{comp_train_pred} compresses parameters based on training cases if one specify \bold{\code{new_compression=1}}, and the information about parameter compression is written to the binary file \code{ptn_file}. When \bold{\code{new_compression=0}}, it uses the existing \code{ptn_file}, if this file is missing an error is reported. It then trains the models with Markov chain Monte Carlo if \bold{\code{iters_mc > 0}}, and the Markov chain iterations are written to the binary file \code{mc_file}. The methods of writing to and reading from the files \code{ptn_file} and \code{mc_file} can be found from the documentations \code{\link{compression}} and \code{\link{training}}. Finally it predicts the responses of test cases if \bold{\code{iters_pred > 0}}, and the result is written to the file \code{pred_file} and also returned as a value of this function.
+\description{The function \code{comp_train_pred} can be used for three tasks: compressing parameter, training the models with MCMC, and making prediction for test cases. When \bold{\code{new_compression=1}}, it compresses parameters based on training cases  and the information about parameter compression is written to the binary file \code{ptn_file}. When \bold{\code{new_compression=0}}, it uses the existing \code{ptn_file}. When \bold{\code{iters_mc > 0}}, it trains the models with Markov chain Monte Carlo  and the Markov chain iterations are written to the binary file \code{mc_file}. The methods of writing to and reading from the files \code{ptn_file} and \code{mc_file} can be found from the documentations \code{\link{compression}} and \code{\link{training}}. When \bold{\code{iters_pred > 0}}, it predicts the responses of test cases and the result is written to the file \code{pred_file} and also returned as a value of this function.
 
 The function \code{cv_comp_train_pred} is a short-cut function for performing cross-validation with the function \code{comp_train_pred}.
 
-The argument \code{is.sequence=1} indicates that a sequence prediction model is fitted to the data, and \code{is.sequence=1} indicates that a general classification model based on discrete predictor variables is fitted.
+The argument \code{is_sequence=1} indicates that a sequence prediction model is fitted to the data, and \code{is_sequence=1} indicates that a general classification model based on discrete predictor variables is fitted.
 }
 
 \usage{
 comp_train_pred(
-################## specify data information  #####################
+################## specify data information  ####################
 test_x,train_x,train_y,no_cls=c(),nos_fth=c(),
-################## specify for compression #######################
+################## specify for compression ######################
 is_sequence=1,order,ptn_file=".ptn.log",
 new_compression=1,do_comp=1,
-###################### specify for priors  #######################
+###################### specify for priors  ######################
 alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-################# specify for mc sampling ########################
+################# specify for mc sampling #######################
 mc_file=".mc.log",start_over=FALSE,iters_mc=200,iters_bt=10,
 iters_sgm=50,w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-################### specify for prediction #######################
+################### specify for prediction ######################
 pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
 
 cv_comp_train_pred(
-###################### Specify data,order,no_fold ################
+###################### Specify data,order,no_fold ###############
 no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
-#################### specify for compressing######################
+#################### specify for compressing#####################
 is_sequence=1,order,ptn_file=".ptn.log",
 new_compression=1,do_comp=1,
-###################### specify for priors  #######################
+###################### specify for priors  ######################
 alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-################# specify for mc sampling ########################
+################# specify for mc sampling #######################
 mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
 w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-################### specify for prediction #######################
+################### specify for prediction ######################
 pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 }
 
@@ -81,7 +82,7 @@ pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 
 \item{w_bt,w_sgm, m_bt}{\code{w_bt} is the amount of stepping-out in updating `beta' with slice sampling. \code{w_sgm} is the standard deviation of Gaussian distribution, which is used as the proposal distribution for updating `log(sigma)' with Metropolis sampling. \code{m_bt} is the maximum number of stepping-out in slice sampling for updating `beta'}
 
-\item{ini_log_sigmas}{Initial values of `log(sigma)', default to \code{log_sigma_mode}.}
+\item{ini_log_sigmas}{Initial values of `log(sigma)', default to \code{log_sigma_modes}.}
 
 \item{pred_file}{A character string, the name of the file to which the prediction result is written. If \code{pred_file=c()}, the prediction result is printed out on screen (or sent to standard output).}
 
@@ -102,8 +103,7 @@ training the model, predicting for test cases}
 
 \seealso{\code{\link{gendata}},\code{\link{compression}},\code{\link{training}},\code{\link{prediction}}}
 
-\author{Longhai Li (Homepage: \url{http://math.usask.ca/~longhai},
-Email: longhai(at)math.usask.ca or longhai(at)utstat.toronto.edu)}
+\author{Longhai Li, \url{http://math.usask.ca/~longhai}}
 
 \references{\url{http://math.usask.ca/~longhai/doc/seqpred/seqpred.abstract.html}}
 
@@ -111,9 +111,9 @@ Email: longhai(at)math.usask.ca or longhai(at)utstat.toronto.edu)}
 ##  loading package
 ##  library("BPHO",lib.loc="~/rlib")
 
-######################################################################
-########this is a demonstration of using the whole packages##########
-######################################################################
+#####################################################################
+########this is a demonstration of using the whole package##########
+#####################################################################
 
 ## generate data from a hidden Markov model
 data_hmm <- gen_hmm(200,10,8,2,0.8,0.8)

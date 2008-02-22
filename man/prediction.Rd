@@ -38,7 +38,7 @@ split_cauchy(n,s, sigma1,sigmasum,debug=1)
 
 \item{pred_result}{the value returned from the function \code{predict_bpho}.}
 
-\item{file_eval_details}{the details of evaluation is sent to the file \code{file_eval_details} if it is nonempty.}
+\item{file_eval_details}{the details of evaluation is sent to the file \code{file_eval_details}.}
 
 \item{n}{number of samples one wishes to obtain.}
 

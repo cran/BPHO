@@ -9,11 +9,11 @@
 \title{Functions related to parameter compression}
 
 \description{
-The function \bold{\code{compress}} groups the patterns in a way such that the interaction patterns in a group are expressed by the same training cases. In training the models with MCMC, we need to use only one parameter for each group, which represents the sum of all the parameters in this group. The original parameters are seemly compressed. A large amount of training time is saved by this compression techniques.
+The function \code{compress} groups the patterns in a way such that the interaction patterns in a group are expressed by the same training cases. In training the models with MCMC, we need to use only one parameter for each group, which represents the sum of all the parameters in this group. The original parameters are seemly compressed. A large amount of training time is saved by this compression techniques.
 
 The result of this grouping is saved in a binary file in a way such that it can be retrieved as a linked list in C, with each node consisting of a description (an integer vector of fixed length) of the group of patterns and the indice (an integer vector of varying length, with 0 for the first training case) of training cases expressing this group of patterns. This file is needed to train the models with MCMC and to predict the responses of test cases using the function \code{\link{comp_train_pred}}.
 
-The function \code{display_ptn} displays the summary information about this compression, such as the number of groups and total number of patterns expressed by the training cases. When \code{gid} is nonempty, it also displays the detailed information about the groups specified by \code{gid}, such as the pattern description and the indice of training cases associated with this group.
+The function \code{display_ptn} displays the summary information about this compression, such as the number of groups and total number of patterns expressed by the training cases. When \code{gids} is nonempty, it also displays the detailed information about the groups specified by \code{gids}, such as the pattern description and the indice of training cases associated with this group.
 
 }
 
@@ -50,9 +50,9 @@ display_ptn(ptn_file, gids=c())
 
 \item{}{The function \code{compress} returns no value. Instead, it saves the result of compression in the file \code{ptn_file}.}
 
-\item{}{The function \code{display_ptn} returns a vector of 6 numbers.  Their meanings are as follows: \code{is.sequence} -- indictor whether a sequence model is fitted,\code{order} -- the maximum order of interactions considered, \code{#groups} -- the number of groups found, \code{#patterns} -- the number of interaction patterns expressed by the training cases,\code{#cases} -- the number of training cases, \code{#features} -- the number of features.}
+\item{}{The function \code{display_ptn} returns a vector of 6 numbers.  Their meanings are as follows: \code{is.sequence} -- indictor whether a sequence model is fitted,\code{order} -- the maximum order of interactions considered, \code{#groups} -- the number of groups found, \code{#patterns} -- the number of interaction patterns expressed by the training cases,\code{#cases} -- the number of training cases,\cr \code{#features} -- the number of features.}
 
-\item{}{When \code{gids} is nonempty, it also displays the details about the queried groups. The information printed on screen for each group is read as follows. Under \bold{\code{Superpatterns}}, it displays a compact description of the pattern group, which is in a special format defined in the references associated with this software. Under \bold{\code{Expression}}, it displays the indice of training cases that express this group of patterns. Under \bold{\code{Sigmas}}, it displays the number of patterns with a certain order, starting from order 0. This information is needed to compute the width parameter of the regression coeficient associated with this group from the values of hyperparameters `sigma's.}
+\item{}{When \code{gids} is nonempty, it also displays the details about the queried groups. The information printed on screen for each group is read as follows. Under \bold{\code{superpatterns}}, it displays a compact description of the pattern group, which is in a special format defined in the references associated with this software. Under \bold{\code{expression}}, it displays the indice of training cases that express this group of patterns. Under \bold{\code{sigmas}}, it displays the number of patterns with a certain order, starting from order 0. This information is needed to compute the width parameter of the regression coeficient associated with this group from the values of hyperparameters `sigma's.}
 
 }
 

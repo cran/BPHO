@@ -80,7 +80,7 @@ Group `evals' contains: the average times of evaluating the posterior distributi
 
 \item{ini_log_sigmas}{Initial values of `log(sigma)', default to \code{log_sigma_mode}.}
 
-\item{quiet}{\code{quiet=1} suppresses the messages printed during reading the file \code{mf_file}.}
+\item{quiet}{\code{quiet=1} suppresses the messages printed during reading the file \code{mc_file}.}
 
 
 }
