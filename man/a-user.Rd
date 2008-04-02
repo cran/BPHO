@@ -17,31 +17,29 @@ The argument \code{is_sequence=1} indicates that a sequence prediction model is 
 
 \usage{
 comp_train_pred(
-################## specify data information  ####################
+################## specify data information  #####################
 test_x,train_x,train_y,no_cls=c(),nos_fth=c(),
-################## specify for compression ######################
-is_sequence=1,order,ptn_file=".ptn.log",
-new_compression=1,do_comp=1,
-###################### specify for priors  ######################
-alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-################# specify for mc sampling #######################
+################## specify for compression #######################
+is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
+###################### specify for priors  #######################
+alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
+################# specify for mc sampling ########################
 mc_file=".mc.log",start_over=FALSE,iters_mc=200,iters_bt=10,
-iters_sgm=50,w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-################### specify for prediction ######################
+iters_sgm=50,w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
+################### specify for prediction #######################
 pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
 
 cv_comp_train_pred(
-###################### Specify data,order,no_fold ###############
+###################### Specify data,order,no_fold #################
 no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
-#################### specify for compressing#####################
-is_sequence=1,order,ptn_file=".ptn.log",
-new_compression=1,do_comp=1,
-###################### specify for priors  ######################
-alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-################# specify for mc sampling #######################
+#################### specify for compressing#######################
+is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
+###################### specify for priors  ########################
+alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
+################# specify for mc sampling #########################
 mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
-w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-################### specify for prediction ######################
+w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
+################### specify for prediction ########################
 pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 }
 
@@ -72,7 +70,7 @@ pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 
 \item{alpha}{\code{alpha=1} indicates that Cauchy prior is used, \code{alpha=2} indicates that Gaussian prior is used.}
 
-\item{sigma_precisions, log_sigma_modes}{two vectors of length \code{order+1}, whose meanings are interpreted as follows: the Gaussian distribution with location \code{log_sigma_modes[o]} and standard deviation \code{1/sigmas_precisions[o]} is the prior distribution for logarithm of `sigmas[o]', which is the hyperparameter (scale parameter of Gaussian distribution or Cauchy distribution) for the regression coefficients (i.e. `beta's) associated with the interactions of order `o' }
+\item{log_sigma_widths, log_sigma_modes}{two vectors of length \code{order+1}, which are interpreted as follows: the Gaussian distribution with location \code{log_sigma_modes[o]} and standard deviation \code{log_sigma_widths[o]} is the prior for `log(sigmas[o])', which is the hyperparameter (width parameter of Gaussian distribution or Cauchy distribution) for the regression coefficients (i.e. `beta's) associated with the interactions of order `o'.}
 
 \item{mc_file}{A character string, the name of the binary file to which Markov chain is written. The method of writing to and reading from \code{mc_file} can be found from the documentation for \code{\link{training}}.}
 
@@ -80,7 +78,7 @@ pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 
 \item{iters_mc,iters_bt,iters_sgm}{\code{iters_mc} iterations of super-transition will be run. Each super-transition consists of \code{iters_bt} iterations of updating `beta's, and for each updating of `beta's, the hyperparameters `log(sigma)'s are updated \code{iters_sgm} times. When \code{iters_mc=0}, no Markov chain sampling will be run and other arguments related to Markov chain sampling take no effect.}
 
-\item{w_bt,w_sgm, m_bt}{\code{w_bt} is the amount of stepping-out in updating `beta' with slice sampling. \code{w_sgm} is the standard deviation of Gaussian distribution, which is used as the proposal distribution for updating `log(sigma)' with Metropolis sampling. \code{m_bt} is the maximum number of stepping-out in slice sampling for updating `beta'}
+\item{w_bt,w_sgm, m_bt,m_sgm}{\code{w_bt} is the amount of stepping-out in updating `beta' with slice sampling,  \code{m_bt} is the maximum number of stepping-out in slice sampling for updating `beta'. \code{w_sgm} and \code{m_sgm} are intepreted similarly for sampling for `log(sigma)'.}
 
 \item{ini_log_sigmas}{Initial values of `log(sigma)', default to \code{log_sigma_modes}.}
 
@@ -112,11 +110,12 @@ training the model, predicting for test cases}
 ##  library("BPHO",lib.loc="~/rlib")
 
 #####################################################################
-########this is a demonstration of using the whole package##########
+########The following are demonstrations of using the whole package
 #####################################################################
 
 ## generate data from a hidden Markov model
-data_hmm <- gen_hmm(200,10,8,2,0.8,0.8)
+data_hmm <- gen_hmm(n=200,p=10,no_h=8,no_o=2,
+                    prob_h_stay=0.8,prob_o_stay=0.8)
 
 ## compressing parameters, training model, making prediction
 comp_train_pred(
@@ -127,11 +126,11 @@ comp_train_pred(
 	is_sequence=1,order=4,ptn_file=".ptn_file.log",
 	new_compression=1,do_comp=1,
 	###################### specify for priors  ##################
-	alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
+	alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
 	################# specify for mc sampling ###################
 	mc_file=".mc_file.log",start_over=TRUE,iters_mc=100,
-	iters_bt=1,iters_sgm=2,w_bt=5,w_sgm=0.5,
-	m_bt=50,ini_log_sigmas=c(),
+	iters_bt=1,iters_sgm=2,w_bt=5,w_sgm=1,
+	m_bt=20,m_sgm=20,ini_log_sigmas=c(),
 	################## specify for prediction ###################
 	pred_file=".pred_file.csv",iter_b = 10,forward = 1,
 	iters_pred = 90)
@@ -146,7 +145,7 @@ display_ptn(ptn_file=".ptn_file.log",gid=c(1,2))
 display_mc(mc_file=".mc_file.log")
 
 ## read Markov chain values of log-likelihood from  ".mc_file.log"
-read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",
+read_mc(mc_file=".mc_file.log",group="lprobs",ix=0,
         iter_b=0,forward=1,n=100)
 
 ## particularly read `betas' by specifying the group and class id
@@ -175,39 +174,39 @@ cv_comp_train_pred(
 	is_sequence=1,order=4,ptn_file=".ptn_file.log",
 	new_compression=1,do_comp=1,
 	###################### specify for priors  ##################
-	alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
+	alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
 	################# specify for mc sampling ###################
 	mc_file=".mc_file.log",iters_mc=100,
-	iters_bt=1,iters_sgm=2,w_bt=5,w_sgm=0.5,
-	m_bt=50,ini_log_sigmas=c(),
+	iters_bt=1,iters_sgm=2,w_bt=5,w_sgm=1,
+	m_bt=20,m_sgm=20,ini_log_sigmas=c(),
 	################## specify for prediction ###################
 	pred_file=".pred_file.csv",iter_b = 10,forward = 1,
 	iters_pred = 90)
-
 
 #####################################################################
 #####################################################################
 
 ## generating a classification data
-data_class <- gen_bin_ho(200,3,3,1,c(0.3,0.2,0.1),c(2,2,2),0)
+data_class <- gen_bin_ho(n=400,p=3,order=3,alpha=1,
+                 sigmas=c(0.3,0.2,0.1),nos_features=c(4,4,4),beta0=0)
 
 ## compressing parameters, training model, making prediction
 comp_train_pred(
 	################## specify data information  ################
 	test_x=data_class$X[1:100,],train_x=data_class$X[-(1:100),],
-	train_y=data_class$y[-(1:100)],no_cls=3,nos_fth=rep(3,3),
+	train_y=data_class$y[-(1:100)],no_cls=2,nos_fth=rep(4,3),
 	################## specify for compression ##################
 	is_sequence=0,order=3,ptn_file=".ptn_file.log",
 	new_compression=1,do_comp=1,
 	###################### specify for priors  ##################
-	alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
+	alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
 	################# specify for mc sampling ###################
-	mc_file=".mc_file.log",start_over=TRUE,iters_mc=100,
-	iters_bt=1,iters_sgm=2,w_bt=5,w_sgm=0.5,
-	m_bt=50,ini_log_sigmas=c(),
+	mc_file=".mc_file.log",start_over=TRUE,iters_mc=500,
+	iters_bt=1,iters_sgm=5,w_bt=5,w_sgm=0.5,
+	m_bt=20,m_sgm=20,ini_log_sigmas=c(),
 	################## specify for prediction ###################
-	pred_file=".pred_file.csv",iter_b = 10,forward = 1,
-	iters_pred = 90)
+	pred_file=".pred_file.csv",iter_b = 100,forward = 1,
+	iters_pred = 400)
 
 ## display summary information about compression
 display_ptn(ptn_file=".ptn_file.log")
@@ -219,26 +218,25 @@ display_ptn(ptn_file=".ptn_file.log",gid=c(1,2))
 display_mc(mc_file=".mc_file.log")
 
 ## read Markov chain values of log-likelihood from ".mc_file.log"
-read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",
+read_mc(mc_file=".mc_file.log",group="lprobs",ix=0,
         iter_b=0,forward=1,n=100)
 
 ## particularly read `betas' by specifying the group and class id
 read_betas(mc_file=".mc_file.log",ix_g=5,ix_cls=2,
-           iter_b=0,forward=1,n=100)
+           iter_b=0,forward=1,n=500)
 
 ## display the information on the pattern related to a `beta'
 display_a_beta(mc_file=".mc_file.log",ptn_file=".ptn_file.log",
                id_beta=5)
 
 ## calculate the medians of samples of each 'beta'
-calc_medians_betas(mc_file=".mc_file.log",iter_b=10,forward=1,n=90)
+calc_medians_betas(mc_file=".mc_file.log",iter_b=100,forward=1,n=400)
 
 ## evaluate prediction with true values of the response
 evaluate_prediction(
        test_y=data_class$y[1:100],
        pred_result=read.csv(".pred_file.csv"),
        file_eval_details="eval_details")
-
 }
 
 \keyword{classif}

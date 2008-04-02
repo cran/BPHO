@@ -27,13 +27,14 @@ The function \code{calc_medians_betas} returns the medians of the Markov chain s
 
 \usage{
 display_mc(mc_file)
-read_mc(group,ix, mc_file,iter_b,forward,n,quiet=1)
-read_betas(mc_file,ix_g,ix_cls,iter_b,forward,n,quiet=1)
+read_mc (mc_file,group,ix, iter_b=0,forward=1,n=c(),quiet=1)
+read_betas (mc_file,ix_g,ix_cls,iter_b=0,forward=1,n=c(),quiet=1)
 display_a_beta(mc_file,ptn_file, id_beta)
+calc_medians_betas(mc_file,iter_b,forward,n)
 training(mc_file,ptn_file, train_y,no_cls,
-         alpha,sigma_precisions,log_sigma_modes,ini_log_sigmas,
+         alpha,log_sigma_widths,log_sigma_modes,ini_log_sigmas,
          iters_mc,iters_bt,iters_sgm,
-         w_bt,w_sgm,m_bt)
+         w_bt,w_sgm,m_bt,m_sgm)
 }
 
 \arguments{
@@ -58,7 +59,7 @@ Group `evals' contains: the average times of evaluating the posterior distributi
 
 \item{ix_g}{index of pattern group, starting from 0.}
 
-\item{ix_cls}{index of class, ranging from \bold{1} to \code{no_cls}.}
+\item{ix_cls}{index of class, ranging from \bold{1} to \bold{\code{no_cls}}.}
 
 \item{id_beta}{index of `beta', starting from 0.}
 
@@ -70,18 +71,17 @@ Group `evals' contains: the average times of evaluating the posterior distributi
 
 \item{alpha}{\code{alpha=1} indicates that Cauchy prior is used, \code{alpha=2} indicates that Gaussian prior is used.}
 
-\item{sigma_precisions, log_sigma_modes}{two vectors of length \code{order+1}, whose meanings are interpreted as follows: the Gaussian distribution with location \code{log_sigma_modes[o]} and standard deviation \code{1/sigmas_precisions[o]} is the prior for `log(sigmas[o])', which is the hyperparameter (width parameter of Gaussian distribution or Cauchy distribution) for the regression coefficients (i.e. `beta's) associated with the interactions of order `o'.}
+\item{log_sigma_widths, log_sigma_modes}{two vectors of length \code{order+1}, which are interpreted as follows: the Gaussian distribution with location \code{log_sigma_modes[o]} and standard deviation \code{log_sigma_widths[o]} is the prior for `log(sigmas[o])', which is the hyperparameter (width parameter of Gaussian distribution or Cauchy distribution) for the regression coefficients (i.e. `beta's) associated with the interactions of order `o'.}
 
 \item{ptn_file}{a character string, the name of the binary file where the compression result is saved. The method of writing to and reading from \code{ptn_file} can be found from the documentation for \code{\link{compression}}.}
 
 \item{iters_mc,iters_bt,iters_sgm}{\code{iters_mc} iterations of super-transition will be run. Each super-transition consists of \code{iters_bt} iterations of updating `beta's, and for each updating of `beta's, the hyperparameters `log(sigma)'s are updated \code{iters_sgm} times. When \code{iters_mc=0}, no Markov chain sampling will be run and other arguments related to Markov chain sampling take no effect.}
 
-\item{w_bt,w_sgm, m_bt}{\code{w_bt} is the amount of stepping-out in updating `beta' with slice sampling. \code{w_sgm} is the standard deviation of Gaussian distribution, which is used as the proposal distribution for updating `log(sigma)' with Metropolis sampling. \code{m_bt} is the maximum number of stepping-out in slice sampling for updating `beta'.}
+\item{w_bt,w_sgm, m_bt,m_sgm}{\code{w_bt} is the amount of stepping-out in updating `beta' with slice sampling,  \code{m_bt} is the maximum number of stepping-out in slice sampling for updating `beta'. \code{w_sgm} and \code{m_sgm} are intepreted similarly for sampling for `log(sigma)'.}
 
 \item{ini_log_sigmas}{Initial values of `log(sigma)', default to \code{log_sigma_mode}.}
 
 \item{quiet}{\code{quiet=1} suppresses the messages printed during reading the file \code{mc_file}.}
-
 
 }
 

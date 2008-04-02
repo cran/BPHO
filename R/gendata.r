@@ -66,7 +66,7 @@ gen_bin_ho <- function(n,p,order,alpha,sigmas,nos_features,beta0)
 
 ############################################################################
 text_to_number <- function(p,file){
-   vtext <- scan(file,what="character",quiet=T)
+   vtext <- scan(file,what="character",quiet=TRUE)
    ctext <- c()
    for(i in 1:length(vtext)){
      ctext <- c(ctext,strsplit(vtext[i],split="")[[1]]," ")
@@ -97,8 +97,7 @@ text_to_number <- function(p,file){
 	   if( ntext[i] == 1 )
              i <- i + 1
 	   else break
-       }       
-       
+       } 
    }
    
    ntext3 <- matrix(0,length(ntext2)-p,p+1)

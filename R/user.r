@@ -4,10 +4,10 @@ comp_train_pred <- function(
    ################## specify for compression #######################
    is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
    ###################### specify for priors  #######################
-   alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
+   alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
    ################# specify for mc sampling ########################
    mc_file=".mc.log",start_over=FALSE,iters_mc=200,iters_bt=10,
-   iters_sgm=50,w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
+   iters_sgm=50,w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
    ################### specify for prediction #######################
    pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
 
@@ -15,9 +15,8 @@ comp_train_pred <- function(
     if(length(log_sigma_modes) != order + 1){
          log_sigma_modes = c(5, seq(0,-5,length=order))
     }
-
-    if(length(sigma_precisions) != order + 1)
-        sigma_precisions = c(1e10,rep(0.1,order))
+    if(length(log_sigma_widths) != order + 1)
+        log_sigma_widths = c(1e-10,rep(2,order))
 
     #set the initial sigmas by default
     if(length(ini_log_sigmas)!= order + 1)
@@ -42,9 +41,9 @@ comp_train_pred <- function(
        if(start_over)  file.remove(mc_file)
        times[2] <- system.time(
        training(mc_file,ptn_file,train_y,no_cls,
-                alpha,sigma_precisions,log_sigma_modes,
+                alpha,log_sigma_widths,log_sigma_modes,
                 ini_log_sigmas,iters_mc,iters_bt,iters_sgm,
-                w_bt,w_sgm,m_bt))[1]
+                w_bt,w_sgm,m_bt,m_sgm))[1]
     }
 
 
@@ -55,11 +54,10 @@ comp_train_pred <- function(
        if(is_sequence == 1 & order < ncol(test_x)) {
           test_x <- test_x[,1:order,drop=FALSE]
        }
-
        times[3] <- system.time(
        pred_result <- predict_bpho(test_x,no_cls,mc_file,ptn_file,
 				iter_b,forward,iters_pred))[1]
-    if( !is.null(pred_file))
+    if(!is.null(pred_file))
         write.table(pred_result, file = pred_file, row.names = FALSE, sep=",")
     }
     list(pred_result=pred_result,
@@ -68,17 +66,17 @@ comp_train_pred <- function(
 
 
 cv_comp_train_pred<- function(
-        ###################### Specify data,order,no_fold #################
-        no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
-	#################### specify for compressing#######################
-	is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
-        ###################### specify for priors  ########################
-        alpha=1,sigma_precisions=c(),log_sigma_modes=c(),
-        ################# specify for mc sampling #########################
-        mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
-	w_bt=10,w_sgm=0.5,m_bt=50,ini_log_sigmas=c(),
-        ################### specify for prediction ########################
-        pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
+   ###################### Specify data,order,no_fold #################
+   no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
+   #################### specify for compressing#######################
+   is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
+   ###################### specify for priors  ########################
+   alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
+   ################# specify for mc sampling #########################
+   mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
+   w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
+   ################### specify for prediction ########################
+   pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
 {
     #set nos_fth and no_cls by default
     if(length(nos_fth) != ncol(train_x))
@@ -93,7 +91,6 @@ cv_comp_train_pred<- function(
     pred_result <- data.frame(pred_probs=matrix(0,n,no_cls),y_pred=rep(0,n))
 
     #start cross-validation
-
     for(i in 1:no_fold) {
 
 	#prepare test cases
@@ -108,10 +105,10 @@ cv_comp_train_pred<- function(
 	   ################## specify for compression ###########
            is_sequence,order,ptn_file,new_compression,do_comp,
            ###################### specify for priors  ###########
-	   alpha,sigma_precisions,log_sigma_modes,
+	   alpha,log_sigma_widths,log_sigma_modes,
            ################# specify for mc sampling ############
 	   mc_file,start_over=TRUE,iters_mc,iters_bt,
-	   iters_sgm,w_bt,w_sgm,m_bt,ini_log_sigmas,
+	   iters_sgm,w_bt,w_sgm,m_bt,m_sgm,ini_log_sigmas,
            ################## specify for prediction ############
 	   pred_file=c(),iter_b,forward,iters_pred)
 

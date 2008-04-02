@@ -54,7 +54,7 @@ void add_sigmas_test_cls
              }
          }
      }
-     if(exist){      
+     if(exist){
        no_nozero_lack = imin2(order - no_nozero, no_nofixed);
        for(i = 0; i <= no_nozero_lack; i++){
            no = choose(no_nofixed, i);
@@ -68,7 +68,8 @@ void add_sigmas_test_cls
 /***************************************************************************/
 void find_sigmas_test_cls
         (int_list* ptns_g,int test[],int order,int p,
-	int sigmas_test[][order+1]){
+	int sigmas_test[][order+1])
+{
     int_node *node;
     node = ptns_g -> next;
     int i_sgm,i_g, no_g = ptns_g -> ll;    
@@ -129,53 +130,56 @@ void R_pred
 
    /*request space for each iteration of mc*/
    int sigmas_test[no_g+1][order+1];   
-   double betas[no_g][no_cls],log_sigmas[order+1],
-         betas_test[no_g][no_cls],widths_test[no_g+1],
-	 widths_g[no_g];
-   double log_probs_pred[R_iter_n[0]][no_cls];   
+   double betas[R_iter_n[0]][no_g][no_cls],log_sigmas[R_iter_n[0]][order+1],
+          widths_g[R_iter_n[0]][no_g],log_probs_pred[R_iter_n[0]][no_cls],
+          betas_test[no_g][no_cls],widths_test[no_g+1];
+   
    int cls_begin = (no_cls > 2)?0:1;      
    /*calcuate size of bytes for each iteration of mc and size in mc file head*/
    long size_head_mc = sizeof(int) * 4;
    long size_each_iter = sizeof(int)+sizeof(double)*(no_g*(no_cls+1)+order+7);
    long skip_each_pred = (R_forward[0]-1) * size_each_iter;
          
-   fp_mc = fopen_chk(mc_files[0],"rb");        
-   for(i_ts = 0; i_ts < *R_no_test; i_ts++){   
+   // read Markov chain samplings 
+   fp_mc = fopen_chk(mc_files[0],"rb");
+   fseek(fp_mc,size_head_mc + R_iter_b[0] * size_each_iter,SEEK_SET); 
+   for(i_pred = 0; i_pred < R_iter_n[0]; i_pred ++)
+   {  
+      fseek(fp_mc,sizeof(int),SEEK_CUR);
+      fread_chk(&betas[i_pred][0][0],sizeof(double),no_g*no_cls,fp_mc,
+                mc_files[0]); 
+      fread_chk(&log_sigmas[i_pred][0],sizeof(double),order+1,fp_mc,mc_files[0]);
+      fseek(fp_mc,6*sizeof(double),SEEK_CUR);
+      fread_chk(&widths_g[i_pred][0],sizeof(double),no_g,fp_mc,mc_files[0]);
+      fseek(fp_mc, skip_each_pred, SEEK_CUR);
+   }
+   fclose(fp_mc);
+          
+   for(i_ts = 0; i_ts < *R_no_test; i_ts++){
       set_double_array(R_iter_n[0]*no_cls,&log_probs_pred[0][0],0);      
       if(sequence == 1)   
          find_sigmas_test_seq(ptns_g,&tests[i_ts][0],order,sigmas_test); 
       else
          find_sigmas_test_cls(ptns_g,&tests[i_ts][0],order,p,sigmas_test);
-      fseek(fp_mc,size_head_mc + R_iter_b[0] * size_each_iter,SEEK_SET); 
       for(i_pred = 0; i_pred < R_iter_n[0]; i_pred ++)
       {  
-         fseek(fp_mc,sizeof(int),SEEK_CUR);          
-         fread_chk(&betas[0][0],sizeof(double),no_g*no_cls,fp_mc,
-	           mc_files[0]);       
-         fread_chk(log_sigmas,sizeof(double),order+1,fp_mc,mc_files[0]);
-	 fseek(fp_mc,6*sizeof(double),SEEK_CUR);
-	 fread_chk(&widths_g[0],sizeof(double),no_g,fp_mc,mc_files[0]);
-	 fseek(fp_mc, skip_each_pred, SEEK_CUR); 
-	 	 
-	 find_widths_g(no_g+1,order,sigmas_test,log_sigmas,widths_test,alpha);
-
+	 find_widths_g(no_g+1,order,sigmas_test,&log_sigmas[i_pred][0],
+                       widths_test,alpha);
          for(i_cls = cls_begin; i_cls < no_cls; i_cls ++) {
-             for(i_g = 0; i_g < no_g; i_g ++) {             
-                 split(&betas_test[i_g][i_cls],&betas[i_g][i_cls], 
-                       &widths_test[i_g],&widths_g[i_g],&alpha);		 
+             for(i_g = 0; i_g < no_g; i_g ++) { 
+                 split(&betas_test[i_g][i_cls],&betas[i_pred][i_g][i_cls], 
+                       &widths_test[i_g],&widths_g[i_pred][i_g],&alpha);		 
                  log_probs_pred[i_pred][i_cls] += betas_test[i_g][i_cls]; 
              }
              GetRNGstate();
              if(alpha == 1)
-                log_probs_pred[i_pred][i_cls] += 
-		    rcauchy(0,widths_test[no_g]);
+                log_probs_pred[i_pred][i_cls]+=rcauchy(0,widths_test[no_g]);
              else
-                log_probs_pred[i_pred][i_cls] += 
-                    rnorm(0,sqrt(widths_test[no_g]));
+                log_probs_pred[i_pred][i_cls]+=rnorm(0,sqrt(widths_test[no_g]));
              PutRNGstate();
          }
          /*normalizing latent value to make probabilities*/
-         norm_log_array(no_cls,&log_probs_pred[i_pred][0]);                    
+         norm_log_array(no_cls,&log_probs_pred[i_pred][0]);  
      }
      /*average over iterations*/
      for(i_cls = 0; i_cls < no_cls; i_cls ++) {
@@ -183,11 +187,9 @@ void R_pred
 	    prediction[i_ts][i_cls] += exp(log_probs_pred[i_pred][i_cls]);	    
          }	 
 	 prediction[i_ts][i_cls] /= R_iter_n[0]; 
-     }     
+     }
    }
-   fclose(fp_mc);   
-}  
-
+}
 
 /***************************************************************************/
 
@@ -287,18 +289,15 @@ void split_cauchy
 	      if(CUR_sign == -1) yU /= 2.0;
 	      CUR_sign = -1;
 	   }
-                    		      		  
            iter++;
-	   	         
     	} 
     	while(fabs(new_y) > TOL & iter < MAX_ITER);
      }	
      else{
-    
         GetRNGstate();
         x[0] = rt(3) * sigma1[0]/sqrt(3);
 	PutRNGstate();
      }
-}       
+}
 
 

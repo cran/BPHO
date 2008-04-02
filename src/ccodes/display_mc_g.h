@@ -1,6 +1,5 @@
 void R_read_mc(char **group, int *ix, char **mc_file, int *iter_b,
-                int *forward, int *n, double out[]);
-		
+                int *forward, int *n, double out[]);		
 void read_mc
    (char* group, int ix, char *mc_file, int iter_b, int forward, int n,
     double out[]);
