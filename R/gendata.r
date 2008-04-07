@@ -65,7 +65,7 @@ gen_bin_ho <- function(n,p,order,alpha,sigmas,nos_features,beta0)
 }
 
 ############################################################################
-text_to_number <- function(p,file){
+text_to_3number <- function(p,file){
    vtext <- scan(file,what="character",quiet=TRUE)
    ctext <- c()
    for(i in 1:length(vtext)){
@@ -105,6 +105,28 @@ text_to_number <- function(p,file){
       ntext3[i,] <- ntext2[i:(i+p)]
   
    list(X=ntext3[,p:1],y=ntext3[,p+1])
+}
+
+text_to_number <- function(p,file){
+   wtext <- scan(file,what="character",quiet=TRUE,blank.lines.skip=TRUE)
+   ctext <- c()
+   for(i in 1:length(wtext)){
+     ctext <- c(ctext,strsplit(wtext[i],split="")[[1]]," ")
+   }
+   lowercase <- strsplit("abcdefghijklmnopqrstuvwxyz",split="")[[1]]
+   uppercase <- strsplit("ABCDEFGHIJKLMNOPQRSTUVWXYZ",split="")[[1]]
+   convert_one_char <- function(char)
+   {  number <- c(27,(1:26)[lowercase==char],(1:26)[uppercase==char])
+      number[length(number)]
+   }
+   ntext <- sapply(ctext,convert_one_char)
+   X <- matrix(0,length(ntext)-p,p)
+   y <- rep(0,length(ntext) - p)
+   for(i in seq(1,length(y)) ) {
+      y[i] <- ntext[i + p]
+      X[i,] <- ntext[seq(i,i+p-1)]
+   }
+   list(X=X,y=y)
 }
 
 ############################################################################

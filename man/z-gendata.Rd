@@ -4,17 +4,20 @@
 \alias{gen_hmm}
 \alias{gen_bin_ho}
 \alias{text_to_number}
+\alias{text_to_3number}
 \alias{gen_X}
 
 \title{Functions for generating data sets}
 
-\description{ \code{gen_hmm} generates sequences using hidden Markov models. \code{gen_bin_ho} generates general discrete data using logistic models, with high-order interactions considered; the response is binary. \code{text_to_number} converts an English text file into sequence of 1 (special symbols such as space, symbol),2 (vowl),3 (consonant).
+\description{ \code{gen_hmm} generates sequences using hidden Markov models. \code{gen_bin_ho} generates general discrete data using logistic models, with high-order interactions considered; the response is binary. \code{text_to_3number} converts an English text file into sequence of 1 (special symbols such as space, symbol),2 (vowl),3 (consonant).
+\code{text_to_number} converts an English text into sequence of 1 - 27, 1-26 for letter a-z, and 27 for all other symbols.
 }
 
 \usage{
 gen_hmm(n,p,no_h,no_o,prob_h_stay, prob_o_stay)
 gen_bin_ho(n,p,order,alpha,sigmas,nos_features,beta0)
 text_to_number(p,file)
+text_to_3number(p,file)
 gen_X(n,p,K)
 }
 

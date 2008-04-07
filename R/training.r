@@ -6,18 +6,20 @@ training <- function(
     iters_mc,iters_bt,iters_sgm,
     w_bt,w_sgm,m_bt,m_sgm)
 {
-  train_y <- as.integer(train_y-1);
-  no_cls <- as.integer(no_cls);
-  iters_mc <- as.integer(iters_mc);
-  iters_bt <- as.integer(iters_bt);
-  iters_sgm <- as.integer(iters_sgm);
-  m_bt <- as.integer(m_bt);
-  alpha <- as.integer(alpha);
-  m_sgm <- as.integer(m_sgm);
 
-  .C("R_training", mc_file,ptn_file,train_y,no_cls,
-     iters_mc,iters_bt,iters_sgm,w_bt,w_sgm,m_bt,m_sgm,alpha,
-     log_sigma_widths, log_sigma_modes, ini_log_sigmas, PACKAGE="BPHO")[c()]
+
+    train_y <- as.integer(train_y-1);
+    no_cls <- as.integer(no_cls);
+    iters_mc <- as.integer(iters_mc);
+    iters_bt <- as.integer(iters_bt);
+    iters_sgm <- as.integer(iters_sgm);
+    m_bt <- as.integer(m_bt);
+    alpha <- as.integer(alpha);
+    m_sgm <- as.integer(m_sgm);
+
+    .C("R_training", mc_file,ptn_file,train_y,no_cls,
+       iters_mc,iters_bt,iters_sgm,w_bt,w_sgm,m_bt,m_sgm,alpha,
+       log_sigma_widths, log_sigma_modes, ini_log_sigmas, PACKAGE="BPHO")[c()]
 }
 
 
@@ -87,11 +89,12 @@ read_betas <- function(mc_file,ix_g,ix_cls,iter_b=0,forward=1,n=c(),quiet=1)
    read_mc(mc_file,"betas",ix_g*no_cls+ix_cls - 1,iter_b,forward,n,quiet)
 }
 
-display_a_beta <- function(mc_file,ptn_file, id_beta)
+display_a_beta <- function(id_beta,mc_file,ptn_file)
 {
    info_mc <- display_mc(mc_file)
 
    no_cls <- info_mc["#class"]
+   names(no_cls) <- c()
    i.group <- floor(id_beta/no_cls)
    i.cls <- id_beta - i.group*no_cls + 1
 
@@ -104,7 +107,6 @@ display_a_beta <- function(mc_file,ptn_file, id_beta)
        " Class #",i.cls,":\n\n",sep="")
 
    beta <- read_mc(mc_file,"betas",id_beta)
-   print(beta)
 
    list(beta=beta,i.group=i.group,i.cls=i.cls)
 }
@@ -112,14 +114,14 @@ display_a_beta <- function(mc_file,ptn_file, id_beta)
 calc_medians_betas <- function(mc_file,iter_b=0,forward=1,n=c())
 {
    info_mc <- display_mc(mc_file)
-   no_beta <- info_mc["#groups"]
+   no_beta <- info_mc["#groups"] * info_mc["#class"]
    
    medians_betas <- rep(0,no_beta)
 
    for(i_bt in seq(0,no_beta-1)){
-      medians_betas[i_bt+1] <- median(
-          read_mc(mc_file,"betas",i_bt, iter_b,forward,n))
+      medians_betas[i_bt+1] <- 
+         median(read_mc(mc_file,"betas",i_bt, iter_b,forward,n))
    }
-   medians_betas
+   rbind(ids_betas=seq(0,no_beta-1),medians_betas=medians_betas)   
 }
 

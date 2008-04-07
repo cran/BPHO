@@ -8,7 +8,7 @@
 
 \title{User-level functions for compressing parameters, training the models with MCMC, and making predictions for test cases}
 
-\description{The function \code{comp_train_pred} can be used for three tasks: compressing parameter, training the models with MCMC, and making prediction for test cases. When \bold{\code{new_compression=1}}, it compresses parameters based on training cases  and the information about parameter compression is written to the binary file \code{ptn_file}. When \bold{\code{new_compression=0}}, it uses the existing \code{ptn_file}. When \bold{\code{iters_mc > 0}}, it trains the models with Markov chain Monte Carlo  and the Markov chain iterations are written to the binary file \code{mc_file}. The methods of writing to and reading from the files \code{ptn_file} and \code{mc_file} can be found from the documentations \code{\link{compression}} and \code{\link{training}}. When \bold{\code{iters_pred > 0}}, it predicts the responses of test cases and the result is written to the file \code{pred_file} and also returned as a value of this function.
+\description{The function \code{comp_train_pred} can be used for all of three tasks: compressing parameter, training the models with MCMC, and making prediction for test cases. When \bold{\code{new_compression=1}}, it compresses parameters based on training cases  and the information about parameter compression is written to the binary file \code{ptn_file}. When \bold{\code{new_compression=0}}, it uses the existing \code{ptn_file}. When \bold{\code{iters_mc > 0}}, it trains the models with Markov chain Monte Carlo  and the Markov chain iterations are written to the binary file \code{mc_file}. The methods of writing to and reading from the files \code{ptn_file} and \code{mc_file} can be found from the documentations \code{\link{compression}} and \code{\link{training}}. When \bold{\code{iters_pred > 0}}, it predicts the responses of test cases and the result is written to the file \code{pred_file} and also returned as a value of this function.
 
 The function \code{cv_comp_train_pred} is a short-cut function for performing cross-validation with the function \code{comp_train_pred}.
 
@@ -145,7 +145,7 @@ display_ptn(ptn_file=".ptn_file.log",gid=c(1,2))
 display_mc(mc_file=".mc_file.log")
 
 ## read Markov chain values of log-likelihood from  ".mc_file.log"
-read_mc(mc_file=".mc_file.log",group="lprobs",ix=0,
+read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",
         iter_b=0,forward=1,n=100)
 
 ## particularly read `betas' by specifying the group and class id
@@ -218,8 +218,8 @@ display_ptn(ptn_file=".ptn_file.log",gid=c(1,2))
 display_mc(mc_file=".mc_file.log")
 
 ## read Markov chain values of log-likelihood from ".mc_file.log"
-read_mc(mc_file=".mc_file.log",group="lprobs",ix=0,
-        iter_b=0,forward=1,n=100)
+read_mc(group="lprobs",ix=0,mc_file=".mc_file.log",
+        iter_b=0,forward=1,n=500)
 
 ## particularly read `betas' by specifying the group and class id
 read_betas(mc_file=".mc_file.log",ix_g=5,ix_cls=2,

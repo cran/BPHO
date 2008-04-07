@@ -11,8 +11,7 @@ comp_train_pred <- function(
    ################### specify for prediction #######################
    pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
 
-{   #set the prior by default
-    if(length(log_sigma_modes) != order + 1){
+{   if(length(log_sigma_modes) != order + 1){
          log_sigma_modes = c(5, seq(0,-5,length=order))
     }
     if(length(log_sigma_widths) != order + 1)
@@ -22,6 +21,7 @@ comp_train_pred <- function(
     if(length(ini_log_sigmas)!= order + 1)
          ini_log_sigmas = log_sigma_modes
 
+    #set the prior by default
     times <- rep(0,3)
     names(times) <- c("compressing","training","prediction")
 
@@ -45,7 +45,6 @@ comp_train_pred <- function(
                 ini_log_sigmas,iters_mc,iters_bt,iters_sgm,
                 w_bt,w_sgm,m_bt,m_sgm))[1]
     }
-
 
     #making prediction
     pred_result <- c()

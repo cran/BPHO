@@ -10,7 +10,7 @@
 \title{Functions related to Markov chain sampling}
 
 \description{
-The models are trained with Markov chain Monte Carlo (MCMC) methods. Slice sampling is used to update `beta's, the regression coefficients for groups, and Metropolis sampling with Gaussian proposal is used to update `log(sigma)', where `sigma' is the width parameter of the prior for `beta'.
+The models are trained with Markov chain Monte Carlo (MCMC) methods. Slice sampling is used to update `beta's, the regression coefficients for groups, and  `log(sigma)', where `sigma' is the width parameter of the prior for `beta'.
 
 The function \code{training} carries out the Markov chain sampling, saving the Markov chain samples in a binary file \code{mc_file}.
 
@@ -27,12 +27,13 @@ The function \code{calc_medians_betas} returns the medians of the Markov chain s
 
 \usage{
 display_mc(mc_file)
-read_mc (mc_file,group,ix, iter_b=0,forward=1,n=c(),quiet=1)
-read_betas (mc_file,ix_g,ix_cls,iter_b=0,forward=1,n=c(),quiet=1)
-display_a_beta(mc_file,ptn_file, id_beta)
-calc_medians_betas(mc_file,iter_b,forward,n)
+read_mc(mc_file,group,ix, iter_b=0,forward=1,n=c(),quiet=1)
+read_betas(mc_file,ix_g,ix_cls,iter_b=0,forward=1,n=c(),quiet=1)
+display_a_beta(id_beta,mc_file,ptn_file)
+calc_medians_betas(mc_file,iter_b=0,forward=1,n=c())
 training(mc_file,ptn_file, train_y,no_cls,
-         alpha,log_sigma_widths,log_sigma_modes,ini_log_sigmas,
+         alpha,log_sigma_widths,
+         log_sigma_modes,ini_log_sigmas,
          iters_mc,iters_bt,iters_sgm,
          w_bt,w_sgm,m_bt,m_sgm)
 }
