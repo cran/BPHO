@@ -2,7 +2,7 @@
 /****************************************************************************/
 void compress_cls(int order,int n, int p, int features[n][p],
                   int* nos_fth,int no_cases_ign, char* file, int quiet,
-		  int do_comp){
+              int do_comp){
     FILE *fp;
     int_list* cases_g = gen_int_list(NULL);
     int_list_list* ptns_g = gen_int_list_list(NULL);
@@ -43,7 +43,7 @@ void compress_cls(int order,int n, int p, int features[n][p],
     if(!quiet) 
        printf("Number of expressed patterns: %d \n", 
          sum_int((ptns_g->ll)*(order+1), &sigmas_g[0][0]));
-	 
+       
     /*write the data relavant to the patterns to file_out[0]*/
     if(!quiet) printf("Writing the cases_ptns to file %s ... \n",file);
            
@@ -62,9 +62,9 @@ void compress_cls(int order,int n, int p, int features[n][p],
 
 void diverge_cls(int n, int p,int features[n][p], 
             int_vec* m_cases,int_vec* m_fths,int* nos_fth, 
-	    int_list* cases_g, int_list_list* ptns_g, int order, 
-	    int* m_ptn, int_vec* NOs_class, int no_cases_ign,
-	    int do_comp){
+            int_list* cases_g, int_list_list* ptns_g, int order, 
+            int* m_ptn, int_vec* NOs_class, int no_cases_ign,
+            int do_comp){
    
   int i,j,id_fth,f;
   int* new_ptn;
@@ -78,12 +78,13 @@ void diverge_cls(int n, int p,int features[n][p],
   /*find the biggest entropy and the associated indice*/    
   max_double_vec(entropy,&max_entropy,ix_m->v);
   /*grouping patterns*/
-  if(max_entropy < 1e-10 & do_comp == 1){      
+  if(max_entropy < 1e-10 & do_comp == 1)
+  {      
       new_ptn = gen_int_array(2*p+2);copy_array(2*p+2,new_ptn,m_ptn);
       for(f = 0; f < m_fths->lv; f++){
          id_fth = m_fths->v[f];
-         new_ptn[id_fth] = features[m_cases->v[0]][id_fth];
-	 new_ptn[p+1+id_fth] = 0;		  	  
+         new_ptn[id_fth] = features[m_cases->v[0]]                                   [id_fth];
+         new_ptn[p+1+id_fth] = 0;                      
       }
       new_ptn[p+1+p] -= m_fths->lv; 
       add_int_list_node(ptns_g,gen_int_list_node(gen_int_list(
@@ -91,12 +92,14 @@ void diverge_cls(int n, int p,int features[n][p],
       add_int_node(cases_g,gen_int_node(m_cases));
   }
   /*if no features with entropy 0*/                   
-  else{                      
+  else 
+  {                      
      id_fth = m_fths->v[ix_m->v[0]];      
      sub_fths =  sub_int_vec(m_fths,ix_m);  
      
-     /*no more features left*/
-     if(sub_fths->lv == 0){    
+     //pass on the mother pattern with a id_fth removed from unconsidered
+     if(sub_fths->lv == 0)
+     {    
        add_int_list_node(ptns_g,gen_int_list_node(gen_int_list(
                          gen_int_node(gen_int_vec(2*p+2,m_ptn)))));
        add_int_node(cases_g,gen_int_node(m_cases));
@@ -104,29 +107,35 @@ void diverge_cls(int n, int p,int features[n][p],
      else 
        diverge_cls(n,p,features,m_cases,sub_fths,nos_fth,
                    cases_g,ptns_g,order,m_ptn,NOs_class,
-	           no_cases_ign,do_comp);
-     if(m_ptn[p] < order)	                       
-       for(i=1; i <= nos_fth[id_fth]; i++){
-     	 
+                   no_cases_ign,do_comp);
+     
+     //fixing id_fth in pattern to a particular value, and diverge
+     if(m_ptn[p] < order)
+     {
+       for(i=1; i <= nos_fth[id_fth]; i++)
+       {
          sub_cases = take_cases(m_cases,n,p,features,id_fth,i);
-         if(sub_cases->lv > 0){ 	                  
+         if(sub_cases->lv > no_cases_ign)
+         {                           
            new_ptn = gen_int_array(2*p+2);copy_array(2*p+2,new_ptn,m_ptn); 
-	                         
            new_ptn[id_fth] = i; new_ptn[p]++;
-	   if(sub_fths->lv == 0 || new_ptn[p] == order){
-	     add_int_node(cases_g,gen_int_node(sub_cases));              
+
+           if(sub_fths->lv == 0 || new_ptn[p] == order)
+           {
+             add_int_node(cases_g,gen_int_node(sub_cases));              
              add_int_list_node(ptns_g,gen_int_list_node(
                                gen_int_list(gen_int_node(
                                gen_int_vec(2*p+2,new_ptn)))));
            }
-           else{
+           else
+           {
             diverge_cls(n,p,features,sub_cases,
                           sub_fths,nos_fth,cases_g,ptns_g,order,
                           new_ptn,NOs_class,no_cases_ign,do_comp);
-           }		 
-        }
+           }                 
+         }
+       }
      }
-   
   }
 }
 
@@ -208,7 +217,7 @@ void trim_ptns(int_list *cases_g, int_list_list *ptns_g)
 /****************************************************************************/
 void add_sigmas_patterns(int id_g,int no_g, int order, int p, 
                         int sigmas_g[][order+1], 
-			int pattern[][p+1]) {
+                        int pattern[][p+1]) {
     int no_nofixed = p - pattern[1][p];
     int no_nozero = pattern[0][p];    
     int no_nozero_lack = imin2(order - no_nozero, no_nofixed);
@@ -228,13 +237,13 @@ void find_sigmas_interact(int_list_list* ptns_g,int order,int p,
     int_node* node;
     while(list_node != NULL){
         node = list_node -> value -> next;
-	while(node != NULL){
+        while(node != NULL){
 
-	     add_sigmas_patterns(id_g,ptns_g->ll,order,p,
+             add_sigmas_patterns(id_g,ptns_g->ll,order,p,
                                  sigmas_g,node->value->v);
-	     node = node -> next;
-	}
-	list_node = list_node -> next;
+             node = node -> next;
+        }
+        list_node = list_node -> next;
         id_g ++;
     }   
 }

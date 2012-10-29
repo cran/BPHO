@@ -49,11 +49,11 @@ gen_bin_ho <- function(n,p,order,alpha,sigmas,nos_features,beta0)
 {
    X <- matrix(0, n, p)
    
-   betas_file="dfjsdlfjlsdfdkjfkldwo3xlaKAALJLSDSLJLSlwiwe1xkjkllfdbetas.csv"
+   betas_file="dfjsdlfjlsdfdkjfkldwo3xlaKAALJLSDSLJLSlwiwe1xfddfdldkfldfdfdfd"
      
    for(i in 1:p)
        X[,i] <- sample(1:nos_features[i],nrow(X),replace = TRUE)
-   file.remove(betas_file)
+   if(file.exists(betas_file)) file.remove(betas_file)
    out = .C("gen_bin_ho",
       as.integer(n),as.integer(p),as.integer(order),
       as.integer(alpha),as.integer(t(X)),as.integer(nos_features),

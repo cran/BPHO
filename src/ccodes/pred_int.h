@@ -22,4 +22,5 @@ void add_sigmas_test_cls
        (int no_g,int id_g,int no_ptn,int p,int ptn[][p+1],
         int test[],int order,int sigmas_test[][order+1]);	
 void find_sigmas_test_seq
-        (int_list* ptns_g,int test[],int order,int sigmas_test[][order+1]);
+        (int_list* ptns_g,int test[],int order,int sigmas_test[][order+1],
+         int no_splits[1]);

@@ -104,8 +104,9 @@ void R_display_compress
     while(ptn_node!=NULL & id_g < *no_show){
         if(id_list==gids[id_g]){
 
-        printf("\n**************** Information of Group %d *********************\n\n",
-        gids[id_g]);
+        printf(
+"\n*********************** Information of Group %d ****************************\n",
+        gids[id_g] + 1);//adding 1 for R user interface 
 
        if(sequence==1){
         printf("Superpatterns:\n");
@@ -118,8 +119,8 @@ void R_display_compress
        }
         print_int_vec(ptn_node->value,p+1);
 
-        printf("Expression:(Indice of Cases expressing this superpattern)\n\n");
-        print_int_vec(cse_node->value,10); printf("\n");
+        printf("Expression:(Indice of cases expressing this superpattern)\n\n");
+        print_expression(cse_node->value, 15); printf("\n");
 
         printf("number of Sigmas for each order from 0 to %d:\n\n",order);
         print_int_array(order+1,sigmas_g+gids[id_g]*(order+1),order+1);
@@ -129,7 +130,6 @@ void R_display_compress
         ptn_node = ptn_node -> next;
         cse_node = cse_node -> next;
    }
-   printf("*************************************************************\n");
 
    info[0] = sequence;info[1] = order;
    info[2] = no_g; info[3] = no_ptns;

@@ -1,123 +1,141 @@
 comp_train_pred <- function(
-   ################## specify data information  #####################
-   test_x,train_x,train_y,no_cls=c(),nos_fth=c(),
-   ################## specify for compression #######################
-   is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
-   ###################### specify for priors  #######################
-   alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
-   ################# specify for mc sampling ########################
-   mc_file=".mc.log",start_over=FALSE,iters_mc=200,iters_bt=10,
-   iters_sgm=50,w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
-   ################### specify for prediction #######################
-   pred_file=c(),iter_b = 100,forward = 1,iters_pred = 100)
+    ################## specify data information  #######################
+    test_x = c(),train_x,train_y,no_cls,nos_features=c(), 
+    ################## specify for compression #########################
+    is_sequence=1,order,ptn_file=c(), new_comp = 1, comp = 1, 
+    no_cases_ign = 0,
+    ################## specify for priors  #############################
+    alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
+    ################## specify for mc sampling #########################
+    mc_file=c(),start_over=TRUE,iters_mc=200,iters_bt=10,
+    iters_sgm=50,w_bt=5,m_bt=20,w_sgm=1,m_sgm=20,ini_log_sigmas=c(),
+    ################## specify for prediction ##########################
+    pred_file=c(),iter_b = 100,forward = 2,samplesize = 50)
 
-{   if(length(log_sigma_modes) != order + 1){
-         log_sigma_modes = c(5, seq(0,-5,length=order))
-    }
-    if(length(log_sigma_widths) != order + 1)
-        log_sigma_widths = c(1e-10,rep(2,order))
+{   
+  times <- rep(0,3)
+  names(times) <- c("compressing","training","prediction")
 
-    #set the initial sigmas by default
-    if(length(ini_log_sigmas)!= order + 1)
-         ini_log_sigmas = log_sigma_modes
+  if (is.null (ptn_file) ) 
+      ptn_file <- paste(".ptn",".o",order, ".log",sep="")
 
-    #set the prior by default
-    times <- rep(0,3)
-    names(times) <- c("compressing","training","prediction")
+  if (is.null (mc_file) ) 
+      mc_file <- paste(".mc",".o",order, ".alpha", alpha,".log",sep="")
 
-    #compressing parameters
-    if(new_compression  == 1 || !file.exists(ptn_file)){
-       order <- min(order,ncol(train_x))
-       if(is_sequence == 1 & order < ncol(train_x)) {
-          train_x <- train_x[,1:order,drop=FALSE]
-	  nos_fth <- nos_fth[1:order]
-       }
-       times[1] <- system.time(
-       compress(train_x,nos_fth,0,ptn_file,1,do_comp,is_sequence,order))[1]
-    }
+  if (is.null (pred_file)) 
+      pred_file <- paste(".pred",".o",order,".alpha",alpha,".csv",sep="")
 
-    #running markov chain
-    if(iters_mc > 0){
-       if(start_over)  file.remove(mc_file)
-       times[2] <- system.time(
-       training(mc_file,ptn_file,train_y,no_cls,
-                alpha,log_sigma_widths,log_sigma_modes,
-                ini_log_sigmas,iters_mc,iters_bt,iters_sgm,
-                w_bt,w_sgm,m_bt,m_sgm))[1]
-    }
+  #compressing parameters (transforming features)
+  if(new_comp  == 1 || !file.exists(ptn_file))
+  {
+    times[1] <- system.time(
+    compress(features = train_x, nos_features = nos_features,
+             ptn_file = ptn_file, comp = comp, is_sequence = is_sequence, 
+             order = order, no_cases_ign = no_cases_ign, quiet = 1)) [1]
+  }
 
-    #making prediction
-    pred_result <- c()
-    if(iters_pred > 0){
-       order <- min(order,ncol(test_x))
-       if(is_sequence == 1 & order < ncol(test_x)) {
-          test_x <- test_x[,1:order,drop=FALSE]
-       }
-       times[3] <- system.time(
-       pred_result <- predict_bpho(test_x,no_cls,mc_file,ptn_file,
-				iter_b,forward,iters_pred))[1]
-    if(!is.null(pred_file))
-        write.table(pred_result, file = pred_file, row.names = FALSE, sep=",")
-    }
-    list(pred_result=pred_result,
-         files=c(ptn_file,mc_file,pred_file),times=times)
+  #running markov chain
+  if(iters_mc > 0)
+  {
+
+    times[2] <- system.time(
+    training(mc_file = mc_file, ptn_file = ptn_file, 
+             train_y = train_y, no_cls = no_cls,
+             alpha = alpha, log_sigma_widths = log_sigma_widths,
+             log_sigma_modes = log_sigma_modes,
+             ini_log_sigmas = ini_log_sigmas, start_over = start_over,
+             iters_mc = iters_mc, iters_bt = iters_bt, iters_sgm = iters_sgm,
+             w_bt = w_bt, m_bt = m_bt, w_sgm = w_sgm,  m_sgm = m_sgm)) [1]
+  }
+
+  #making prediction
+  pred_result <- c()
+  
+  if (samplesize > 0 & !is.null (test_x) )
+  {
+    times[3] <- system.time (
+    pred_result <- predict_bpho ( 
+         test_x = test_x, mc_file = mc_file, ptn_file = ptn_file,
+         iter_b = iter_b, forward = forward, samplesize = samplesize) )[1]
+    write.table (pred_result, file = pred_file, row.names = FALSE, sep=",")
+  }
+  
+  list (pred_result = pred_result,files = c(ptn_file,mc_file,pred_file),
+        times = times)
 }
 
-
-cv_comp_train_pred<- function(
-   ###################### Specify data,order,no_fold #################
-   no_fold=10,train_x,train_y,no_cls=c(),nos_fth=c(),
-   #################### specify for compressing#######################
-   is_sequence=1,order,ptn_file=".ptn.log",new_compression=1,do_comp=1,
-   ###################### specify for priors  ########################
-   alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
-   ################# specify for mc sampling #########################
-   mc_file=".mc.log",iters_mc=200,iters_bt=10,iters_sgm=50,
-   w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
-   ################### specify for prediction ########################
-   pred_file = c(),iter_b = 100,forward = 1,iters_pred = 100)
+cv_comp_train_pred <- function(
+    ###################### Specify data,order,no_fold ##################
+    no_fold=10,train_x,train_y,no_cls=c(),nos_features=c(),
+    ###################### specify for compressing #####################
+    is_sequence=1,order,ptn_file=c(),comp=1, no_cases_ign = 0,
+    ###################### specify for priors  #########################
+    alpha=1,log_sigma_widths=c(),log_sigma_modes=c(),
+    ###################### specify for mc sampling #####################
+    mc_file=c(),iters_mc=200,iters_bt=10,iters_sgm=50,
+    w_bt=5,w_sgm=1,m_bt=20,m_sgm=20,ini_log_sigmas=c(),
+    ###################### specify for prediction ######################
+    pred_file=c(),iter_b=100,forward=2,samplesize=50)
 {
-    #set nos_fth and no_cls by default
-    if(length(nos_fth) != ncol(train_x))
-       nos_fth <- apply(train_x,2,max)
+  #set nos_features and no_cls by default
+  n <- nrow(train_x)
+  if( length(nos_features) != ncol(train_x) ) 
+      nos_features <- apply(train_x,2,max)
+  if( length(no_cls) == 0 ) no_cls <- max(train_y)
+  pred_result <- data.frame(pred_probs=matrix(0,n,no_cls),y_pred=rep(0,n))
 
-    if(length(no_cls) == 0)
-       no_cls = max(train_y)
+  if (is.null (ptn_file)) 
+      ptn_file <- paste(".ptn",".o",order, ".log",sep="")
 
-    n <- nrow(train_x)
-    m <- floor(n / no_fold)
-    rm <- n - m * no_fold
-    pred_result <- data.frame(pred_probs=matrix(0,n,no_cls),y_pred=rep(0,n))
+  if (is.null (mc_file)) 
+      mc_file <- paste(".mc",".o",order, ".alpha", alpha,".log",sep="")
 
-    #start cross-validation
-    for(i in 1:no_fold) {
+  if (is.null (pred_file)) 
+      pred_file <- paste(".pred",".o",order,".alpha",alpha,".csv",sep="")
 
-	#prepare test cases
-        if( i <= rm)
-           testcases <- i + seq(0,m) * no_fold
-        else testcases <- i + seq(0, m-1) * no_fold
+  m <- floor(n / no_fold)
+  rm <- n - m * no_fold
+  #start cross-validation
+  times <- rep (0,3)
+  for( i in 1:no_fold ) 
+  {
+    #prepare test cases
+    if( i <= rm ) testcases <- i + seq(0,m) * no_fold
+      else testcases <- i + seq(0, m-1) * no_fold
 
-	out <- comp_train_pred(
-	   ################## specify data information  #########
-           train_x[testcases,,drop=FALSE],train_x[-testcases,,drop=FALSE],
-	   train_y[-testcases],no_cls,nos_fth,
-	   ################## specify for compression ###########
-           is_sequence,order,ptn_file,new_compression,do_comp,
-           ###################### specify for priors  ###########
-	   alpha,log_sigma_widths,log_sigma_modes,
-           ################# specify for mc sampling ############
-	   mc_file,start_over=TRUE,iters_mc,iters_bt,
-	   iters_sgm,w_bt,w_sgm,m_bt,m_sgm,ini_log_sigmas,
-           ################## specify for prediction ############
-	   pred_file=c(),iter_b,forward,iters_pred)
+    out <- comp_train_pred(
+            ################## specify data information  #####################
+            test_x = train_x[testcases,,drop=FALSE],
+            train_x = train_x[-testcases,,drop=FALSE],
+            train_y = train_y[-testcases], 
+            no_cls = no_cls, nos_features = nos_features,
+            ################## specify for compression #######################
+            is_sequence = is_sequence,
+            order = order,ptn_file = ptn_file, new_comp = 1,comp = comp,
+            no_cases_ign = no_cases_ign,
+            ###################### specify for priors  #######################
+            alpha = alpha,log_sigma_widths = log_sigma_widths,
+            log_sigma_modes = log_sigma_modes,
+            ################# specify for mc sampling ########################
+            mc_file = mc_file,start_over=TRUE,
+            iters_mc = iters_mc, iters_bt = iters_bt, iters_sgm = iters_sgm,
+            w_bt = w_bt, w_sgm = w_sgm, m_bt = m_bt, m_sgm = m_sgm, 
+            ini_log_sigmas = ini_log_sigmas,
+            ################## specify for prediction ########################
+            pred_file = c(),iter_b = iter_b, forward = forward,
+            samplesize = samplesize)
 
-	pred_result[testcases,] <- out$pred_result
-	times <- out$times
-	files <- out$files
-    }
-    if( !is.null(pred_file) )
-        write.csv(pred_result,file = pred_file, row.names = FALSE)
-
-    list(times=times,pred_result=pred_result,
-         files=c(ptn_file,mc_file,pred_file))
+    pred_result[testcases,] <- out$pred_result
+    times <- times + out$times
+  }
+  
+  ## evaluate predictions
+  eval_result <- evaluate_prediction (test_y = train_y, 
+                 pred_result = pred_result, file_eval_details = pred_file)
+  
+  list (eval_details = eval_result$eval_details, 
+        error_rate = eval_result$error_rate, 
+        amll = eval_result$amll, 
+        times = times, files = c(ptn_file,mc_file,pred_file) 
+       )
 }

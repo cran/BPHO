@@ -16,8 +16,7 @@ The function \code{evaluate_prediction} evaluates the performance of the predict
 }
 
 \usage{
-predict_bpho(test_x,no_cls,mc_file,ptn_file,iter_b,forward,
-             iters_pred)
+predict_bpho(test_x,mc_file,ptn_file,iter_b,forward,samplesize)
 evaluate_prediction(test_y,pred_result,file_eval_details=c())
 split_cauchy(n,s, sigma1,sigmasum,debug=1)
 }
@@ -28,13 +27,11 @@ split_cauchy(n,s, sigma1,sigmasum,debug=1)
 
 \item{test_y}{Discrete responses of test data, a vector with length equal to the row of \code{test_x}. Assumed to be coded with 1,2,... \code{no_cls}.}
 
-\item{no_cls}{the number of possibilities (classes) of the response.}
-
 \item{ptn_file}{a character string, the name of the binary file to which the compression result is saved. The method of writing to and reading from \code{ptn_file} can be found from the documentation \code{\link{compression}}.}
 
 \item{mc_file}{A character string, the name of the binary file to which Markov chain is written. The method of writing to and reading from \code{mc_file} can be found from the documentation \code{\link{training}}.}
 
-\item{iter_b, forward, iters_pred}{Starting from \code{iter_b}, one of every \code{forward} Markov chain samples, with the number of total samples being <= \code{iters_pred} and the maximum usable in the file \code{mc_file}, is used to make prediction.}
+\item{iter_b, forward, samplesize}{Starting from \code{iter_b}, one of every \code{forward} Markov chain samples, with the number of total samples being <= \code{samplesize} and the maximum usable in the file \code{mc_file}, is used to make prediction.}
 
 \item{pred_result}{the value returned from the function \code{predict_bpho}.}
 

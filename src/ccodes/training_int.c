@@ -38,7 +38,7 @@ void training
     FILE *fp_mc;
 
     double beta_o,log_sigma_o,U,z,beta_n,log_sigma_n,beta_L,beta_R,
-           sigma_L,sigma_R,eval_ss,eval_hp;    
+           sigma_L,sigma_R,eval_ss,eval_hp;
     /*loading compression information*/
     load_compress(cases_g,ptns_g,&sequence,&order,&n,&p,&sigmas_g,
                   cases_ptns_file,1);
@@ -88,6 +88,11 @@ void training
        log_postv,lv,sum_log_likev,log_sum_exp_lv);
        
     /*starting mc updating with slice sampling*/
+    GetRNGstate();
+    U = runif(0,1);
+    PutRNGstate();
+    
+    iters_mc += next_iter_mc;
     
     while(next_iter_mc < iters_mc) {
        next_iter_mc++;
@@ -186,7 +191,7 @@ void training
 	  for(i_hp = 0;i_hp < iters_hp; i_hp++) {
              //Rprintf("I am starting updating sigma\n");
              for(i_sgm = 0; i_sgm < order+1; i_sgm++){
-		 if(a_sigmas[i_sgm] > 1e-10){
+ 		 if(a_sigmas[i_sgm] > 1e-10){
                       GetRNGstate();
                       U = runif(0,1);
                       PutRNGstate();
@@ -275,8 +280,6 @@ void training
                           no_cls,no_g,order,sigmas_g, 
                           a_sigmas,b_sigmas,alpha,cls_begin,betas);
                          eval_hp++;
-                         //Rprintf("draw sigma: ");
-                         //Rprintf("z is %f, logpost is %f, L is %f, R is %f\n",z,log_postv[0],sigma_L,sigma_R);
                          if(log_postv[0] >= z) break;
                          if(log_sigmas[i_sgm] > log_sigma_o) 
                              sigma_R = log_sigmas[i_sgm];
@@ -296,7 +299,10 @@ void training
        //writing markov chain iterations to file 
        fp_mc = fopen_chk(mc_file,"ab");
        fwrite_chk(betas,sizeof(double),no_g * no_cls,fp_mc,mc_file);
+       //printf("\n\niter %d, beta3103 = %f, beta3538 = %f\n\n",
+       //       next_iter_mc,*(&betas[0][0]+3103),*(&betas[0][0]+3538));
        fwrite_chk(log_sigmas,sizeof(double), order + 1,fp_mc,mc_file);
+       //print_double_array(order+1,log_sigmas,order+1);
        fwrite_chk(sum_log_likev,sizeof(double),1,fp_mc,mc_file);
        fwrite_chk(sum_log_prior_betas,sizeof(double),1,fp_mc,mc_file);
        fwrite_chk(sum_log_prior_sigmas,sizeof(double),1,fp_mc,mc_file);
@@ -307,8 +313,7 @@ void training
        fwrite_chk(&next_iter_mc,sizeof(int),1,fp_mc,mc_file);
        fclose(fp_mc);
     }   
-    Rprintf("Markov chain sampling is done. %d iterations exist in file %s\n",
-             next_iter_mc,mc_file);
+    Rprintf("There are %d of samples in file '%s'.\n", next_iter_mc,mc_file);
 }
 /*****************************************************************************/
 int_vec* find_cases_gid(int_list *cases_g, int gid){
@@ -424,7 +429,7 @@ void initialize_mc_state
     
     set_double_array(order+1,log_prior_sigmas,0);
     for(i_sgm = 0; i_sgm < order + 1; i_sgm++){
-        if(a_sigmas[i_sgm] < 1e10)
+        if(a_sigmas[i_sgm] > 1e-10)
            log_prior_sigmas[i_sgm] =
               dnorm(log_sigmas[i_sgm],b_sigmas[i_sgm],a_sigmas[i_sgm],1);
     }
@@ -461,79 +466,3 @@ void initialize_mc_state
                    sum_log_prior_sigmas[0];
 }
 
-/*
-
-
- */
- 
- 
- /*
-    log_sigma_n = rnorm(log_sigmas[i_sgm],w_hp);
-
-    if(log_sigma_n < -10 || log_sigma_n > 10){ 
-    	rej_hp[0]++;
-    	return;
-    }
-    else
-    {
-	//save the old values
-	for(i_g = 0; i_g < no_g; i_g++){
-		if(sigmas_g[i_g][i_sgm] > 0){
-		   widths_g_o[i_g] = widths_g[i_g];
-		}
-	}
-	log_prior_sigma_o = log_prior_sigmas[i_sgm];
-	sum_log_prior_sigmas_o = sum_log_prior_sigmas[0];
-	sum_log_prior_betas_o = sum_log_prior_betas[0];
-	log_postv_o = log_postv[0];
-	log_sigma_o = log_sigmas[i_sgm];
-
-	//start updating with new sigma
-	log_sigmas[i_sgm] = log_sigma_n;
-	log_prior_sigmas[i_sgm] =
-	     dnorm(log_sigmas[i_sgm],b_sigmas[i_sgm],1.0/a_sigmas[i_sgm],1);
-	sum_log_prior_sigmas[0] += log_prior_sigmas[i_sgm] - log_prior_sigma_o;
-
-	for(i_g = 0; i_g < no_g; i_g++){
-	    if(sigmas_g[i_g][i_sgm] > 0){
-		widths_g[i_g] += sigmas_g[i_g][i_sgm] *
-				(exp(alpha*log_sigmas[i_sgm]) -
-				 exp(alpha*log_sigma_o));
-		if(widths_g[i_g] < 0) { 
-		    widths_g[i_g] = 0;
-		    Rprintf("Note: width became 0\n");
-		}
-
-		if(alpha == 1){
-		   for(i_cls = cls_begin; i_cls < no_cls; i_cls++)
-		      sum_log_prior_betas[0] +=
-			dcauchy(betas[i_g][i_cls],0,widths_g[i_g],1)
-			- dcauchy(betas[i_g][i_cls],0,widths_g_o[i_g],1);
-		}
-		if(alpha == 2){
-		   for(i_cls = cls_begin; i_cls < no_cls; i_cls++)
-		      sum_log_prior_betas[0] +=
-			dnorm(betas[i_g][i_cls],0,sqrt(widths_g[i_g]),1)
-			- dnorm(betas[i_g][i_cls],0,sqrt(widths_g_o[i_g]),1);
-		}
-	   }
-	}
-	log_postv[0] = sum_log_likev[0] + sum_log_prior_betas[0] +
-		       sum_log_prior_sigmas[0];
-	if(log(runif(0,1)) >= log_postv[0] - log_postv_o){
-	       //rejecting the proposed value and retrieve everything
-	       //retrieve the old values
-	       rej_hp[0]++;
-	       for(i_g = 0; i_g < no_g; i_g++){
-		  if(sigmas_g[i_g][i_sgm] > 0){
-		      widths_g[i_g] = widths_g_o[i_g];
-		  }
-	       }
-	       log_prior_sigmas[i_sgm] = log_prior_sigma_o;
-	       sum_log_prior_sigmas[0] = sum_log_prior_sigmas_o;
-	       sum_log_prior_betas[0] = sum_log_prior_betas_o;
-	       log_postv[0] = log_postv_o;
-	       log_sigmas[i_sgm] = log_sigma_o;
-	}
-   }
-*/

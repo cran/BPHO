@@ -96,7 +96,7 @@ void read_mc
 }
 /**************************************************************************/
 
-void display_mc(char** mc_files,int out[5])
+void summary_mc(char** mc_files,int out[5])
 {
    FILE* fp_mc;
    fp_mc = fopen_chk(mc_files[0],"rb");

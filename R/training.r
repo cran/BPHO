@@ -1,29 +1,61 @@
 #y.tr is assumed to be coded by 1,2,...,no.cls
-training <- function(
-    mc_file,ptn_file,
-    train_y,no_cls,alpha,
-    log_sigma_widths,log_sigma_modes,ini_log_sigmas,
-    iters_mc,iters_bt,iters_sgm,
-    w_bt,w_sgm,m_bt,m_sgm)
-{
+training <- function (
+    ################## specify for data  ###############################
+    train_y, no_cls, mc_file, ptn_file, 
+    ################## specify for priors  #############################
+    alpha=1, log_sigma_modes=c(), log_sigma_widths=c(), 
+    ################## specify for slice sampling ######################
+    iters_mc=200, iters_bt=10,  iters_sgm=50,
+    w_bt=5, m_bt=20, w_sgm=1, m_sgm=20, ini_log_sigmas=c(), 
+    start_over=TRUE )
+{   
+    order <- display_ptn (ptn_file) ["order"]
+       
+    if (any (train_y < 1) || any (train_y > no_cls) ) 
+        stop ("response cannot smaller than 1 or larger than 'no_cls'")
 
+    ## specifying priors separately for Gaussian and Cauchy if they are empty
+    if (alpha == 1) 
+    {  if (is.null (log_sigma_modes) )
+          log_sigma_modes <- c (1, seq (-1, by = log (0.7), length = order) )
+       if (is.null (log_sigma_widths) )
+          log_sigma_widths <- c (1e-10, rep (log(10)/2, order) )
+    }
+    
+    if (alpha == 2)
+    {  if (is.null (log_sigma_modes) )
+          log_sigma_modes <- c (10, seq (5, by = log (0.7), length = order) )
+       if (is.null (log_sigma_widths) )
+          log_sigma_widths <- c (1e-10, rep (log(10)/2, order) )
+    }
+    
+    ## specifying initial hyperparameters if they are empty
+    if (is.null (ini_log_sigmas) )
+    {  ini_log_sigmas <- log_sigma_modes
+    }
+    
+    
+    ## integerize some variables
+    no_cls <- as.integer(no_cls)
+    alpha <- as.integer(alpha)
+    iters_mc <- as.integer(iters_mc)
+    iters_bt <- as.integer(iters_bt)
+    iters_sgm <- as.integer(iters_sgm)
+    m_bt <- as.integer(m_bt)
+    m_sgm <- as.integer(m_sgm)
 
-    train_y <- as.integer(train_y-1);
-    no_cls <- as.integer(no_cls);
-    iters_mc <- as.integer(iters_mc);
-    iters_bt <- as.integer(iters_bt);
-    iters_sgm <- as.integer(iters_sgm);
-    m_bt <- as.integer(m_bt);
-    alpha <- as.integer(alpha);
-    m_sgm <- as.integer(m_sgm);
-
+    if (start_over == TRUE & file.exists (mc_file) ) file.remove (mc_file)
+    
+    ## transforming response by minus 1
+    train_y <- as.integer(train_y-1) ## in C code, response starts from 0
+    
     .C("R_training", mc_file,ptn_file,train_y,no_cls,
        iters_mc,iters_bt,iters_sgm,w_bt,w_sgm,m_bt,m_sgm,alpha,
-       log_sigma_widths, log_sigma_modes, ini_log_sigmas, PACKAGE="BPHO")[c()]
+       log_sigma_widths, log_sigma_modes, ini_log_sigmas, PACKAGE="BPHO") -> tmp
 }
 
 
-display_mc <- function(mc_file)
+summary_mc <- function(mc_file)
 {
    if(!file.exists(mc_file))
       stop(paste(mc_file,"does not exist"))
@@ -31,97 +63,69 @@ display_mc <- function(mc_file)
    out <- integer(5)
    names(out) <- c("#iters","#class","#groups","order","alpha")
 
-   .C("display_mc",mc_file,out,PACKAGE="BPHO")[[2]]
+   .C("summary_mc",mc_file,out,PACKAGE="BPHO")[[2]]
 }
 
 
-read_mc <- function(mc_file,group,ix, iter_b=0,forward=1,n=c(),quiet=1)
+read_mc <- function(
+  group,ix, mc_file, iter_b=1,forward=1,samplesize=c(),quiet=1)
 {
    if(!file.exists(mc_file))
       stop(paste(mc_file,"does not exist"))
 
-   info_mc <- display_mc(mc_file)
+   info_mc <- summary_mc(mc_file)
    iters <- info_mc["#iters"]
 
 
-   if(length(n)==0 || 
-      any(c(iter_b < 0, iter_b > iters - 1,iter_b + forward * (n-1) > iters-1)))
+   if (length (samplesize) == 0 || 
+       any (c (iter_b < 1, iter_b > iters, 
+               iter_b + forward * (samplesize-1) > iters) ) )
    {   
        cat("Use all",iters, "iterations in",mc_file,"\n")
-       iter_b =0
-       forward = 1
-       n = iters
+       iter_b <- 1
+       forward <- 1
+       samplesize <- iters
    }
-   if(n == 0) {
-      cat("The number of iterations is 0, summary information is displayed:\n")
-      return(info_mc)
-   }
-   .C("R_read_mc",group,as.integer(ix),mc_file,as.integer(iter_b),
-      as.integer(forward),as.integer(n),out=rep(0,n),PACKAGE="BPHO")$out
-}
-
-
-read_betas <- function(mc_file,ix_g,ix_cls,iter_b=0,forward=1,n=c(),quiet=1)
-{
-   if(!file.exists(mc_file))
-      stop(paste(mc_file,"does not exist"))
-
-   info_mc <- display_mc(mc_file)
-   no_cls <- info_mc["#class"]
-   iters <- info_mc["#iters"]
-
-
-   if(length(n)==0 || 
-      any(c(iter_b < 0, iter_b > iters - 1,iter_b + forward * (n-1) > iters-1)))
-   {   cat("Use all iterations in",mc_file,"\n")
-       iter_b =0
-       forward = 1
-       n = iters
-   }
-   if(n == 0) {
-      cat("The number of iterations is 0, summary information is displayed:\n")
-      return(info_mc)
-   }
-
-   if(!file.exists(mc_file))
-      stop(paste(mc_file,"does not exist"))
-
-   read_mc(mc_file,"betas",ix_g*no_cls+ix_cls - 1,iter_b,forward,n,quiet)
-}
-
-display_a_beta <- function(id_beta,mc_file,ptn_file)
-{
-   info_mc <- display_mc(mc_file)
-
-   no_cls <- info_mc["#class"]
-   names(no_cls) <- c()
-   i.group <- floor(id_beta/no_cls)
-   i.cls <- id_beta - i.group*no_cls + 1
-
-   cat("\nThe information on the pattern related to the beta #",
-       id_beta,":\n",sep="")
-
-   display_ptn(ptn_file,i.group)
-
-   cat("\nThe Markov chain samples of this beta for group #",i.group,
-       " Class #",i.cls,":\n\n",sep="")
-
-   beta <- read_mc(mc_file,"betas",id_beta)
-
-   list(beta=beta,i.group=i.group,i.cls=i.cls)
-}
-
-calc_medians_betas <- function(mc_file,iter_b=0,forward=1,n=c())
-{
-   info_mc <- display_mc(mc_file)
-   no_beta <- info_mc["#groups"] * info_mc["#class"]
    
-   medians_betas <- rep(0,no_beta)
-
-   for(i_bt in seq(0,no_beta-1)){
-      medians_betas[i_bt+1] <- 
-         median(read_mc(mc_file,"betas",i_bt, iter_b,forward,n))
+   if(samplesize == 0) {
+      cat("The number of iterations is 0, summary information is displayed:\n")
+      return(info_mc)
    }
-   rbind(ids_betas=seq(0,no_beta-1),medians_betas=medians_betas)   
+   .C("R_read_mc",group,as.integer(ix-1),mc_file,as.integer(iter_b-1),
+      as.integer(forward),as.integer(samplesize), 
+      out=rep(0,samplesize),PACKAGE="BPHO")$out
+}
+
+
+read_betas <- function(
+   ix_g, ix_cls, mc_file, iter_b=1,forward=1,samplesize=c(),quiet=1)
+{
+   if(!file.exists(mc_file)) stop(paste(mc_file,"does not exist"))
+
+   no_cls <- summary_mc(mc_file)["#class"]
+
+   read_mc("betas", (ix_g - 1) * no_cls + ix_cls, mc_file, 
+           iter_b, forward, samplesize, quiet)
+}
+
+
+medians_betas <- function (mc_file, iter_b=1, forward=1, samplesize=c() )
+{
+   info_mc <- summary_mc(mc_file)
+   
+   medians_betas <- matrix (0, info_mc["#groups"], info_mc["#class"])
+   colnames (medians_betas) <- paste ("cls", seq (1, info_mc["#class"]), 
+             sep ="_" )
+   for (i_g in seq (1, info_mc["#groups"]) )
+       for (i_cls in seq (1, info_mc["#class"]) )
+       {
+           medians_betas [i_g, i_cls] <- 
+	   median (
+	     read_betas (i_g, i_cls, mc_file, iter_b, forward, samplesize) )
+       }
+   max_medians_betas <- apply (abs (medians_betas), 1, max)
+   order_g <- order (max_medians_betas, decreasing = TRUE)
+   medians_betas <- medians_betas[order_g,]
+   cbind(groupid = order_g, medians_betas)
 }
 

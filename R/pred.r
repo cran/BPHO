@@ -1,39 +1,45 @@
-predict_bpho <- function(test_x,no_cls,mc_file,ptn_file,
-                         iter_b,forward,iters_pred)
+predict_bpho <- function(test_x, mc_file, ptn_file, iter_b, forward, samplesize)
 {
-   if(is.vector(test_x)) test_x <- matrix(test_x,1,length(test_x))
+   if (is.vector(test_x)) test_x <- matrix(test_x,1,length(test_x))
 
-   n <- nrow(test_x)
-   p <- ncol(test_x)
-
-   info_mc <- display_mc(mc_file)
-   info_ptn <- display_ptn(ptn_file)
-
-   if(info_ptn["#groups"] != info_mc["#groups"])
+   info_mc <- summary_mc (mc_file)
+   info_ptn <- display_ptn (ptn_file)
+   no_cls <- info_mc ["#class"]
+   order <- info_ptn ["order"]
+   is_sequence <- info_ptn ["is_sequence"]
+   if (info_ptn["#groups"] != info_mc["#groups"])
       stop(paste(mc_file,"and",ptn_file,"does not match"))
 
-   if(info_ptn["#features"] != p || info_mc["#class"] != no_cls)
-      stop("The test data does not match the training data")
+   if (any( c(iter_b ,iter_b + forward * (samplesize-1)) > info_mc["#iters"]) )
+      stop("The specified MC indice out of range")
 
-   if( any( c(iter_b ,iter_b + forward * (iters_pred-1)) >= info_mc["#iters"]) )
-       stop("The specified MC indice out of range")
-
+   if (is_sequence == 1 & order < ncol(test_x)) 
+   {
+      test_x <- test_x [, 1:order, drop = FALSE]
+   }
+   
+   n <- nrow (test_x)
+   p <- ncol (test_x)
+   
    pred_probs <- matrix(
      .C("R_pred",n,p,as.integer(t(test_x)),
         as.integer(no_cls),prediction=rep(0,n*no_cls),
         mc_file,ptn_file,as.integer(iter_b),as.integer(forward),
-        as.integer(iters_pred),PACKAGE="BPHO")$prediction,
-      n,no_cls,byrow=TRUE)
+        as.integer(samplesize),PACKAGE="BPHO")$prediction,
+        n,no_cls,byrow=TRUE)
 
    y_pred <- apply(pred_probs,1,which.max)
-   data.frame(pred_probs=pred_probs,y_pred=y_pred)
 
+   data.frame(pred_probs=pred_probs,y_pred=y_pred)
 }
 
 evaluate_prediction <- function(test_y,pred_result,file_eval_details=c())
 {
    if(is.vector(pred_result))
-     stop("There is only a test case. Cannot make evaluation.")
+     stop ("There is only a test case. Cannot make evaluation.")
+    
+   if( nrow (pred_result) != length (test_y) ) 
+     stop ("True values of response and prediction result NOT match")
    wrong <- 1*(pred_result[,"y_pred"] != test_y)
    error_rate <- mean(wrong)
    probs_true <- test_y
@@ -42,7 +48,8 @@ evaluate_prediction <- function(test_y,pred_result,file_eval_details=c())
    amll <- mean( -log(probs_true) )
    eval_details <- data.frame(y_true=test_y,y_pred=pred_result[,"y_pred"],
                        wrong=wrong,probs_at_true=probs_true)
-   if( !is.null(file_eval_details) ){
+   if( !is.null(file_eval_details) )
+   {
       sink(file_eval_details)
       print(eval_details)
       sink()

@@ -101,6 +101,16 @@ void print_int_vec(int_vec* unit,int items_line)
    printf("\n");
 }
 
+/***************************************************************************/
+void print_expression(int_vec* unit,int items_line)
+{  int i;
+   for(i = 0; i < unit -> lv; i++){
+      printf("%4d,",unit -> v[i] + 1);
+      if(i%items_line == items_line - 1) printf("\n");
+   }
+   printf("\n");
+}
+
 /**************************************************************************/
 void print_int_list(int_list * list, int items_line)
 { /*int i,k;*/

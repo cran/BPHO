@@ -56,3 +56,4 @@ int sum_int_vec(int_vec* unit);
 int_vec* sub_int_vec(int_vec* unit, int_vec* sub);
 
 void free_int_vec(int_vec* unit);
+void print_expression(int_vec* unit,int items_line);

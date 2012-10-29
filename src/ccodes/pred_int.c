@@ -1,9 +1,10 @@
 /****************************************************************************/
 void find_sigmas_test_seq
-        (int_list* ptns_g,int test[],int order,int sigmas_test[][order+1])
+        (int_list* ptns_g,int test[],int order,int sigmas_test[][order+1],
+         int no_splits[1])
 {
     int_node *node;
-    int *ptn,expressed,o;
+    int *ptn,expressed,o,t;
     node = ptns_g -> next;
     int i_sgm,i_g,no_g = ptns_g -> ll;    
     set_value_array((no_g)*(order+1),&sigmas_test[0][0],0);
@@ -19,11 +20,17 @@ void find_sigmas_test_seq
               break;
           }
        } 
-       if(expressed==1){           
-         for(o = ptn[order]; o < order+1; o++){
-           sigmas_test[i_g][o]++;
-           sigmas_test[no_g][o]--;
-           if(ptn[o]==0 || ptn[o]!=test[o]) break;
+       if(expressed==1){
+         sigmas_test[i_g][ptn[order]]++;
+         sigmas_test[no_g][ptn[order]]--;
+         for(t = ptn[order]; t < order; t++){
+           if(ptn[t] == 0) break;
+           if(ptn[t] != test[t]) {
+              no_splits[0]++;
+              break;
+           }
+           sigmas_test[i_g][t+1]++;
+           sigmas_test[no_g][t+1]--;
          }
        }
        node = node->next;
@@ -105,11 +112,10 @@ void R_pred
         (int *R_no_test,int *R_p,int tests[][R_p[0]],
          int *R_no_cls, double prediction[][*R_no_cls],
          char** mc_files,char** cases_ptns_files, 
-         int *R_iter_b,int *R_forward,int *R_iter_n)
-	 
+         int *R_iter_b,int *R_forward,int *R_iter_n)	 
 {  
    int *sigmas_g,n,p,no_g,order,no_cls,alpha,no_iters,sequence;
-   int i_pred,i_g,i_ts,i_cls;
+   int i_pred,i_g,i_ts,i_cls, no_splits=0;
 
    int_list *cases_g = gen_int_list(NULL);
    int_list *ptns_g = gen_int_list(NULL);
@@ -123,28 +129,29 @@ void R_pred
    fseek(fp_mc,-sizeof(int),SEEK_END);
    fread_chk(&no_iters,sizeof(int),1,fp_mc,mc_files[0]);
    fclose(fp_mc);
-   
+
    /*loading compression information*/
    load_compress(cases_g,ptns_g,&sequence,&order,&n,&p,&sigmas_g,
                  cases_ptns_files[0],1);
 
    /*request space for each iteration of mc*/
    int sigmas_test[no_g+1][order+1];   
-   double betas[R_iter_n[0]][no_g][no_cls],log_sigmas[R_iter_n[0]][order+1],
+   double (*betas)[no_g][no_cls],log_sigmas[R_iter_n[0]][order+1],
           widths_g[R_iter_n[0]][no_g],log_probs_pred[R_iter_n[0]][no_cls],
           betas_test[no_g][no_cls],widths_test[no_g+1];
-   
-   int cls_begin = (no_cls > 2)?0:1;      
+   betas =  R_alloc (R_iter_n[0], sizeof (*betas) );	  
+
+   int cls_begin = (no_cls > 2)?0:1;
    /*calcuate size of bytes for each iteration of mc and size in mc file head*/
    long size_head_mc = sizeof(int) * 4;
    long size_each_iter = sizeof(int)+sizeof(double)*(no_g*(no_cls+1)+order+7);
    long skip_each_pred = (R_forward[0]-1) * size_each_iter;
-         
-   // read Markov chain samplings 
+
+   // read Markov chain samples 
    fp_mc = fopen_chk(mc_files[0],"rb");
    fseek(fp_mc,size_head_mc + R_iter_b[0] * size_each_iter,SEEK_SET); 
    for(i_pred = 0; i_pred < R_iter_n[0]; i_pred ++)
-   {  
+   {
       fseek(fp_mc,sizeof(int),SEEK_CUR);
       fread_chk(&betas[i_pred][0][0],sizeof(double),no_g*no_cls,fp_mc,
                 mc_files[0]); 
@@ -154,22 +161,24 @@ void R_pred
       fseek(fp_mc, skip_each_pred, SEEK_CUR);
    }
    fclose(fp_mc);
-          
+
    for(i_ts = 0; i_ts < *R_no_test; i_ts++){
-      set_double_array(R_iter_n[0]*no_cls,&log_probs_pred[0][0],0);      
-      if(sequence == 1)   
-         find_sigmas_test_seq(ptns_g,&tests[i_ts][0],order,sigmas_test); 
+      set_double_array(R_iter_n[0]*no_cls,&log_probs_pred[0][0],0); 
+      if(sequence == 1)
+         find_sigmas_test_seq(ptns_g,&tests[i_ts][0],order,sigmas_test, 
+                              &no_splits);
       else
          find_sigmas_test_cls(ptns_g,&tests[i_ts][0],order,p,sigmas_test);
       for(i_pred = 0; i_pred < R_iter_n[0]; i_pred ++)
-      {  
+      {
 	 find_widths_g(no_g+1,order,sigmas_test,&log_sigmas[i_pred][0],
                        widths_test,alpha);
          for(i_cls = cls_begin; i_cls < no_cls; i_cls ++) {
-             for(i_g = 0; i_g < no_g; i_g ++) { 
-                 split(&betas_test[i_g][i_cls],&betas[i_pred][i_g][i_cls], 
-                       &widths_test[i_g],&widths_g[i_pred][i_g],&alpha);		 
-                 log_probs_pred[i_pred][i_cls] += betas_test[i_g][i_cls]; 
+             for(i_g = 0; i_g < no_g; i_g ++) 
+	     {
+                 split(&betas_test[i_g][i_cls], &betas[i_pred][i_g][i_cls],
+                       &widths_test[i_g], &widths_g[i_pred][i_g], &alpha); 
+                 log_probs_pred[i_pred][i_cls] += betas_test[i_g][i_cls];
              }
              GetRNGstate();
              if(alpha == 1)
@@ -179,16 +188,19 @@ void R_pred
              PutRNGstate();
          }
          /*normalizing latent value to make probabilities*/
-         norm_log_array(no_cls,&log_probs_pred[i_pred][0]);  
+         norm_log_array(no_cls,&log_probs_pred[i_pred][0]);
      }
      /*average over iterations*/
      for(i_cls = 0; i_cls < no_cls; i_cls ++) {
-         for(i_pred = 0; i_pred < R_iter_n[0]; i_pred ++){            
-	    prediction[i_ts][i_cls] += exp(log_probs_pred[i_pred][i_cls]);	    
-         }	 
+         for(i_pred = 0; i_pred < R_iter_n[0]; i_pred ++){
+	    prediction[i_ts][i_cls] += exp(log_probs_pred[i_pred][i_cls]);
+         }
 	 prediction[i_ts][i_cls] /= R_iter_n[0]; 
      }
    }
+   if( sequence == 1)
+   Rprintf("Fraction of test cases for which splitting occures is %0.4f\n",
+           (no_splits+0.0)/R_no_test[0] );
 }
 
 /***************************************************************************/
